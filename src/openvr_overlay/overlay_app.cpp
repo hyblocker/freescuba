@@ -1,4 +1,5 @@
 #include "overlay_app.hpp"
+#include "user_interface.hpp"
 
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -71,10 +72,15 @@ namespace FreeScuba {
             //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
             //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
             //IM_ASSERT(font != nullptr);
+
+            SetupImgui();
+
             return true;
 		}
 
 		void DestroyWindow() {
+            CleanupImgui();
+
             // Cleanup
             ImGui_ImplDX11_Shutdown();
             ImGui_ImplWin32_Shutdown();
@@ -172,6 +178,7 @@ namespace FreeScuba {
         }
 
 		bool UpdateNativeWindow() {
+
             ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
             // Poll and handle messages (inputs, window resize, etc.)
@@ -199,7 +206,8 @@ namespace FreeScuba {
             ImGui_ImplWin32_NewFrame();
             ImGui::NewFrame();
 
-            DrawFrame();
+            bool isDashboardVisible = false;
+            DrawUi(isDashboardVisible);
 
             // Rendering
             ImGui::Render();
@@ -213,8 +221,5 @@ namespace FreeScuba {
 
             return true;
 		}
-        void DrawFrame() {
-            ImGui::ShowDemoWindow();
-        }
 	}
 }
