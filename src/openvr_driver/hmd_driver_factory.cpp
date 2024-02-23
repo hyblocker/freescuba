@@ -13,7 +13,7 @@
 //Global, single interface of our device provider.
 DeviceProvider device_provider;
 
-HMD_DLL_EXPORT void* HmdDriverFactory(const char* pInterfaceName, int* pReturnCode) {
+HMD_DLL_EXPORT void* HmdDriverFactory(const char* pInterfaceName, int* pReturnCode) {	
 	if (0 == strcmp(vr::IServerTrackedDeviceProvider_Version, pInterfaceName)) {
 		return &device_provider;
 	}

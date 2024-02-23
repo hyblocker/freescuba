@@ -37,3 +37,16 @@ void DeviceProvider::EnterStandby() {
 void DeviceProvider::LeaveStandby() {
 
 }
+
+
+void DeviceProvider::HandleFingersUpdate(protocol::FingersUpdate fingersUpdate) {
+    // @TODO: 
+}
+
+void DeviceProvider::HandleInputUpdate(protocol::InputUpdate inputUpdate) {
+    // @TODO: 
+}
+
+void DeviceProvider::HandleGloveStateUpdate(protocol::StateUpdate updateState) {
+    // @TODO: 
+}
