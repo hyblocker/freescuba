@@ -3,7 +3,7 @@
 
 ## Demo
 
-TODO: INSERT VIDEO AFTER FIRST README COMMIT
+<video src="https://raw.githubusercontent.com/hyblocker/freescuba/master/.github/gloves-demo.mp4" width=100></video>
 
 ## What is this?
 
