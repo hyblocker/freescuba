@@ -3,7 +3,9 @@
 
 ## Demo
 
-<video src="https://raw.githubusercontent.com/hyblocker/freescuba/master/.github/gloves-demo.mp4" width=100></video>
+https://github.com/hyblocker/freescuba/assets/7695629/dd491e0c-60d5-4ae3-9ad2-d7a21eeab823
+
+![Overlay user interface](https://github.com/hyblocker/freescuba/assets/7695629/944e0213-6acd-4c5c-8939-0d08c8547449)
 
 ## What is this?
 
