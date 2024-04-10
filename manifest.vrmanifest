@@ -1,0 +1,16 @@
+{
+	"source" : "builtin",
+	"applications": [{
+		"app_key": "hyblocker.DriverFreeScuba",
+		"launch_type": "binary",
+		"binary_path_windows": "FreeScubaOverlay.exe",
+		"is_dashboard_overlay": true,
+
+		"strings": {
+			"en_us": {
+				"name": "Free Scuba",
+				"description": "Free Scuba Settings"
+			}
+		}
+	}]
+}
