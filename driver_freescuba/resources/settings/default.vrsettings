@@ -1,0 +1,7 @@
+{
+  "driver_freescuba": {
+    "enable": true,
+    "loadPriority": 9999,
+    "blocked_by_safe_mode": false
+  }
+}
