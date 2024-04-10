@@ -30,15 +30,35 @@ IPCClient::~IPCClient()
 
 void IPCClient::Connect()
 {
-	LPTSTR pipeName = TEXT(FREESCUBA_PIPE_NAME);
-
-	WaitNamedPipe(pipeName, 1000);
-	pipe = CreateFile(pipeName, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, 0, 0);
-
-	if (pipe == INVALID_HANDLE_VALUE)
+	// Connect to pipe job
+	while (1)
 	{
-		throw std::runtime_error("FreeScuba driver unavailable. Make sure SteamVR is running, and the FreeScuba addon is enabled in SteamVR settings.");
+		LPTSTR pipeName = (LPTSTR)TEXT(FREESCUBA_PIPE_NAME);
+		pipe = CreateFile(
+			pipeName,   // pipe name 
+			GENERIC_READ |  // read and write access 
+			GENERIC_WRITE,
+			0,              // no sharing 
+			NULL,           // default security attributes
+			OPEN_EXISTING,  // opens existing pipe 
+			0,              // default attributes 
+			NULL);          // no template file 
+
+		// Break if the pipe handle is valid. 
+		if (pipe != INVALID_HANDLE_VALUE)
+			break;
+
+		// Exit if an error other than ERROR_PIPE_BUSY occurs. 
+		if (GetLastError() != ERROR_PIPE_BUSY) {
+			throw std::runtime_error(std::string("Could not open pipe. Got error ") + std::to_string(GetLastError()));
+		}
+
+		// All pipe instances are busy, so wait for 20 seconds. 
+		if (!WaitNamedPipe(pipeName, 20000)) {
+			throw std::runtime_error("Could not open pipe: 20 second wait timed out.");
+		}
 	}
+
 
 	DWORD mode = PIPE_READMODE_MESSAGE;
 	if (!SetNamedPipeHandleState(pipe, &mode, 0, 0))

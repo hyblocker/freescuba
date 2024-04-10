@@ -1,5 +1,9 @@
 cmake_minimum_required (VERSION 3.8)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 # This is your project name
 set(TARGET_NAME freescuba)
 
@@ -9,9 +13,35 @@ set(DRIVER_NAME "driver_${TARGET_NAME}")
 project(FreeScubaDriver)
 message("FreeScuba - Driver")
 
+function(GroupSourcesByFolder target)
+  set(SOURCE_GROUP_DELIMITER "/")
+  set(last_dir "")
+  set(files "")
+
+  get_target_property(sources ${target} SOURCES)
+
+  foreach(file ${sources})
+    file(RELATIVE_PATH relative_file "${PROJECT_SOURCE_DIR}" ${file})
+    get_filename_component(dir "${relative_file}" PATH)
+    if(NOT "${dir}" STREQUAL "${last_dir}")
+      if(files)
+        source_group("${last_dir}" FILES ${files})
+      endif()
+      set(files "")
+    endif()
+    set(files ${files} ${file})
+    set(last_dir "${dir}")
+  endforeach()
+
+  if(files)
+    source_group("${last_dir}" FILES ${files})
+  endif()
+endfunction()
+
+
 set(OPENVR_LIB_DIR ${CMAKE_SOURCE_DIR}/vendor/openvr)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 
 # If not set, determine the platform architecture
 if (NOT PLATFORM)
@@ -59,8 +89,8 @@ find_library(OPENVR_LIBRARIES
         )
 
 # Add source files
-file(GLOB_RECURSE SOURCES_API RELATIVE ${CMAKE_SOURCE_DIR}/src/openvr_driver "*.c" "*.h" "*.hpp" "*.cpp")
-file(GLOB_RECURSE SOURCES_HEADERS RELATIVE ${CMAKE_SOURCE_DIR}/src/openvr_driver "*.h" "*.hpp")
+file(GLOB_RECURSE SOURCES_API ${CMAKE_SOURCE_DIR}/src/openvr_driver "*.c" "*.h" "*.hpp" "*.cpp")
+file(GLOB_RECURSE SOURCES_HEADERS ${CMAKE_SOURCE_DIR}/src/openvr_driver "*.h" "*.hpp")
 
 foreach(SOURCE IN ITEMS ${SOURCES_API})
     get_filename_component(SOURCE_PATH "${SOURCE}" PATH)
@@ -71,19 +101,25 @@ endforeach()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_BINARY_DIR}/${DRIVER_NAME}/bin/${ARCH_TARGET}>)
 
+add_definitions(-D_UNICODE)
 add_library(FreeScubaDriver SHARED ${SOURCES_API} ${SOURCES_HEADERS})
+GroupSourcesByFolder(FreeScubaDriver)
 
 target_include_directories(FreeScubaDriver
 	PRIVATE ${CMAKE_SOURCE_DIR}
     PRIVATE ${CMAKE_SOURCE_DIR}/src/openvr_driver
 	PRIVATE ${OPENVR_LIB_DIR}
-	PRIVATE ${CMAKE_SOURCE_DIR}/vendor/openvr/headers)
+	PRIVATE ${CMAKE_SOURCE_DIR}/vendor/openvr/headers
+	PRIVATE ${CMAKE_SOURCE_DIR}/vendor/minhook/include)
 
 target_link_libraries(FreeScubaDriver
 	PRIVATE d3d11.lib
 	PRIVATE dxgi.lib
 	PRIVATE d3dcompiler.lib
-	PRIVATE ${OPENVR_LIBRARIES})
+	PRIVATE ${OPENVR_LIBRARIES}
+	PRIVATE minhook)
+
+set_target_properties(FreeScubaDriver PROPERTIES OUTPUT_NAME ${DRIVER_NAME})
 
 # Copy driver assets to output folder
 add_custom_command(

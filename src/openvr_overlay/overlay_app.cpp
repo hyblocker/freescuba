@@ -1,6 +1,8 @@
 #include "overlay_app.hpp"
 #include "user_interface.hpp"
 
+#include <algorithm>
+
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -11,10 +13,14 @@ namespace FreeScuba {
         static ID3D11Device*            g_pd3dDevice = nullptr;
         static ID3D11DeviceContext*     g_pd3dDeviceContext = nullptr;
         static IDXGISwapChain*          g_pSwapChain = nullptr;
+        static ID3D11Texture2D*         g_pBackBuffer = nullptr;
         static UINT                     g_ResizeWidth = 0, g_ResizeHeight = 0;
+        static UINT                     g_windowWidth = 1280, g_windowHeight = 720;
         static ID3D11RenderTargetView*  g_mainRenderTargetView = nullptr;
         static HWND                     g_hwnd;
         static WNDCLASSEXW              g_wc;
+        static BOOL                     s_windowVisible = true;
+        static char                     s_textBuf[0x400];
 
         // Forward declarations of helper functions
         bool CreateDeviceD3D(HWND hWnd);
@@ -28,7 +34,7 @@ namespace FreeScuba {
             //ImGui_ImplWin32_EnableDpiAwareness();
             g_wc = { sizeof(g_wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"FreeScubaOverlayWindow", nullptr };
             ::RegisterClassExW(&g_wc);
-            g_hwnd = ::CreateWindowW(g_wc.lpszClassName, L"Free Scuba Settings", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, g_wc.hInstance, nullptr);
+            g_hwnd = ::CreateWindowW(g_wc.lpszClassName, L"Free Scuba Settings", WS_OVERLAPPEDWINDOW, 100, 100, g_windowWidth, g_windowHeight, nullptr, nullptr, g_wc.hInstance, nullptr);
 
             // Initialize Direct3D
             if (!CreateDeviceD3D(g_hwnd))
@@ -93,9 +99,7 @@ namespace FreeScuba {
 		}
 
         // Helper functions
-
-        bool CreateDeviceD3D(HWND hWnd)
-        {
+        bool CreateDeviceD3D(HWND hWnd) {
             // Setup swap chain
             DXGI_SWAP_CHAIN_DESC sd;
             ZeroMemory(&sd, sizeof(sd));
@@ -130,6 +134,7 @@ namespace FreeScuba {
         void CleanupDeviceD3D()
         {
             CleanupRenderTarget();
+            if (g_pBackBuffer) { g_pBackBuffer->Release(); g_pBackBuffer = nullptr; }
             if (g_pSwapChain) { g_pSwapChain->Release(); g_pSwapChain = nullptr; }
             if (g_pd3dDeviceContext) { g_pd3dDeviceContext->Release(); g_pd3dDeviceContext = nullptr; }
             if (g_pd3dDevice) { g_pd3dDevice->Release(); g_pd3dDevice = nullptr; }
@@ -137,10 +142,11 @@ namespace FreeScuba {
 
         void CreateRenderTarget()
         {
-            ID3D11Texture2D* pBackBuffer;
-            g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
-            g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &g_mainRenderTargetView);
-            pBackBuffer->Release();
+            g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&g_pBackBuffer));
+            if (g_pBackBuffer != nullptr) {
+                g_pBackBuffer->Release();
+            }
+            g_pd3dDevice->CreateRenderTargetView(g_pBackBuffer, nullptr, &g_mainRenderTargetView);
         }
 
         void CleanupRenderTarget()
@@ -166,9 +172,28 @@ namespace FreeScuba {
                 g_ResizeWidth = (UINT)LOWORD(lParam); // Queue resize
                 g_ResizeHeight = (UINT)HIWORD(lParam);
                 return 0;
+            case WM_ACTIVATE:
+                if (wParam == WA_INACTIVE) {
+                    s_windowVisible = false;
+                    return 0;
+                } else {
+                    s_windowVisible = true;
+                    return 0;
+                }
+                break;
             case WM_SYSCOMMAND:
                 if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
                     return 0;
+                if ((wParam & 0xfff0) == SC_MINIMIZE) {
+                    // Handle minimise
+                    s_windowVisible = false;
+                    return 0;
+                }
+                if ((wParam & 0xfff0) == SC_RESTORE) {
+                    // Handle restore
+                    s_windowVisible = true;
+                    return 0;
+                }
                 break;
             case WM_DESTROY:
                 ::PostQuitMessage(0);
@@ -177,7 +202,7 @@ namespace FreeScuba {
             return ::DefWindowProcW(hWnd, msg, wParam, lParam);
         }
 
-		bool UpdateNativeWindow() {
+		bool UpdateNativeWindow(AppState& state, vr::VROverlayHandle_t overlayMainHandle) {
 
             ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -197,27 +222,145 @@ namespace FreeScuba {
             {
                 CleanupRenderTarget();
                 g_pSwapChain->ResizeBuffers(0, g_ResizeWidth, g_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
+                g_windowWidth = g_ResizeWidth;
+                g_windowHeight = g_ResizeHeight;
                 g_ResizeWidth = g_ResizeHeight = 0;
                 CreateRenderTarget();
             }
 
-            // Start the Dear ImGui frame
-            ImGui_ImplDX11_NewFrame();
-            ImGui_ImplWin32_NewFrame();
-            ImGui::NewFrame();
+            // Handle overlay inputs
+            bool dashboardVisible = false;
+            if (overlayMainHandle && vr::VROverlay()) {
+                auto& io = ImGui::GetIO();
+                dashboardVisible = vr::VROverlay()->IsActiveDashboardOverlay(overlayMainHandle);
 
-            bool isDashboardVisible = false;
-            DrawUi(isDashboardVisible);
+                static bool keyboardOpen = false, keyboardJustClosed = false;
 
-            // Rendering
-            ImGui::Render();
-            const float clear_color_with_alpha[4] = { clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w };
-            g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
-            g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color_with_alpha);
-            ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+                // After closing the keyboard, this code waits one frame for ImGui to pick up the new text from SetActiveText
+                // before clearing the active widget. Then it waits another frame before allowing the keyboard to open again,
+                // otherwise it will do so instantly since WantTextInput is still true on the second frame.
+                if (keyboardJustClosed && keyboardOpen)
+                {
+                    ImGui::ClearActiveID();
+                    keyboardOpen = false;
+                }
+                else if (keyboardJustClosed)
+                {
+                    keyboardJustClosed = false;
+                }
+                else if (!io.WantTextInput)
+                {
+                    // User might close the keyboard without hitting Done, so we unset the flag to allow it to open again.
+                    keyboardOpen = false;
+                }
+                else if (io.WantTextInput && !keyboardOpen && !keyboardJustClosed)
+                {
+                    int id = ImGui::GetActiveID();
+                    auto textInfo = ImGui::GetInputTextState(id);
 
-            g_pSwapChain->Present(1, 0); // Present with vsync
-            //g_pSwapChain->Present(0, 0); // Present without vsync
+                    if (textInfo != nullptr) {
+                        s_textBuf[0] = 0;
+                        int len = WideCharToMultiByte(CP_ACP, 0, (LPCWCH)textInfo->TextW.Data, textInfo->TextW.Size, s_textBuf, sizeof(s_textBuf), NULL, NULL);
+                        s_textBuf[std::min<unsigned long long>(len, sizeof(s_textBuf) - 1)] = 0;
+
+                        uint32_t unFlags = 0; // EKeyboardFlags 
+
+                        vr::VROverlay()->ShowKeyboardForOverlay(
+                            overlayMainHandle, vr::k_EGamepadTextInputModeNormal, vr::k_EGamepadTextInputLineModeSingleLine,
+                            unFlags, "Free Scuba Overlay", sizeof s_textBuf, s_textBuf, 0
+                        );
+                        keyboardOpen = true;
+                    }
+                }
+
+                vr::VREvent_t vrEvent;
+                while (vr::VROverlay()->PollNextOverlayEvent(overlayMainHandle, &vrEvent, sizeof(vrEvent)))
+                {
+                    switch (vrEvent.eventType) {
+                    case vr::VREvent_MouseMove:
+                        io.AddMousePosEvent(vrEvent.data.mouse.x, vrEvent.data.mouse.y);
+                        break;
+                    case vr::VREvent_MouseButtonDown:
+                        io.AddMouseButtonEvent((vrEvent.data.mouse.button & vr::VRMouseButton_Left) == vr::VRMouseButton_Left ? 0 : 1, true);
+                        break;
+                    case vr::VREvent_MouseButtonUp:
+                        io.AddMouseButtonEvent((vrEvent.data.mouse.button & vr::VRMouseButton_Left) == vr::VRMouseButton_Left ? 0 : 1, false);
+                        break;
+                    case vr::VREvent_ScrollDiscrete:
+                    {
+                        float x = vrEvent.data.scroll.xdelta * 360.0f * 8.0f;
+                        float y = vrEvent.data.scroll.ydelta * 360.0f * 8.0f;
+                        io.AddMouseWheelEvent(x, y);
+                        break;
+                    }
+                    case vr::VREvent_KeyboardDone: {
+                        vr::VROverlay()->GetKeyboardText(s_textBuf, sizeof s_textBuf);
+
+                        int id = ImGui::GetActiveID();
+                        auto textInfo = ImGui::GetInputTextState(id);
+                        int bufSize = MultiByteToWideChar(CP_ACP, 0, s_textBuf, -1, NULL, 0);
+                        textInfo->TextW.resize(bufSize);
+                        MultiByteToWideChar(CP_ACP, 0, s_textBuf, -1, (LPWSTR)textInfo->TextW.Data, bufSize);
+                        textInfo->CurLenW = bufSize;
+                        textInfo->CurLenA = WideCharToMultiByte(CP_UTF8, 0, (LPCWCH)textInfo->TextW.Data, textInfo->TextW.Size, NULL, 0, NULL, NULL);
+
+                        keyboardJustClosed = true;
+                        break;
+                    }
+                    case vr::VREvent_Quit:
+                        return false;
+                    }
+                }
+            }
+
+            if (s_windowVisible || dashboardVisible) {
+
+                // Window should follow overlay resolution
+                auto& io = ImGui::GetIO();
+                io.DisplaySize = ImVec2((float)g_windowWidth, (float)g_windowHeight);
+                io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+
+                // Overlay should ignore mouse inputs from the hardware
+                io.ConfigFlags = io.ConfigFlags & ~ImGuiConfigFlags_NoMouseCursorChange;
+                if (dashboardVisible) {
+                    io.ConfigFlags = io.ConfigFlags | ImGuiConfigFlags_NoMouseCursorChange;
+                }
+
+                // Start the Dear ImGui frame
+                ImGui_ImplDX11_NewFrame();
+                ImGui_ImplWin32_NewFrame();
+                ImGui::NewFrame();
+
+                bool isDashboardVisible = false;
+                DrawUi(isDashboardVisible, state);
+
+                // Rendering
+                ImGui::Render();
+                const float clear_color_with_alpha[4] = { clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w };
+                g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
+                g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color_with_alpha);
+                ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+                // Only present if the window is visible
+                if (g_windowWidth != 0 && g_windowHeight != 0) {
+                    g_pSwapChain->Present(1, 0); // Present with vsync
+                    //g_pSwapChain->Present(0, 0); // Present without vsync
+                }
+
+                // Only present to SteamVR if the overlay is open
+                if (dashboardVisible)
+                {
+                    vr::Texture_t vrTex;
+                    vrTex.eType = vr::TextureType_DirectX;
+                    vrTex.eColorSpace = vr::ColorSpace_Auto;
+                    vrTex.handle = (void*) g_pBackBuffer;
+
+                    vr::HmdVector2_t mouseScale = { (float)g_windowWidth, (float)g_windowHeight };
+
+                    vr::VROverlay()->SetOverlayTexture(overlayMainHandle, &vrTex);
+                    vr::VROverlay()->SetOverlayMouseScale(overlayMainHandle, &mouseScale);
+                }
+            }
 
             return true;
 		}

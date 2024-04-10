@@ -1,8 +1,10 @@
 #pragma once
 
+#include <openvr.h>
 #include "../ipc_protocol.hpp"
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
 
 class IPCClient {

@@ -1,20 +1,21 @@
 #include "device_provider.hpp"
+#include "interface_hook_injector.hpp"
 
 vr::EVRInitError DeviceProvider::Init(vr::IVRDriverContext* pDriverContext) {
     VR_INIT_SERVER_DRIVER_CONTEXT(pDriverContext);
 
-    vr::VRDriverLog()->Log("FreeScuba::DeviceProvider::Init()");
+    LOG("FreeScuba::DeviceProvider::Init()");
 
-    // @TODO: Inject minhook here
+    InjectHooks(this, pDriverContext);
     m_server.Run();
 
     return vr::VRInitError_None;
 }
 
 void DeviceProvider::Cleanup() {
-    vr::VRDriverLog()->Log("ServerTrackedDeviceProvider::Cleanup()");
+    LOG("ServerTrackedDeviceProvider::Cleanup()");
     m_server.Stop();
-    // @TODO: Uninject minhook here
+    DisableHooks();
     VR_CLEANUP_SERVER_DRIVER_CONTEXT();
 }
 
@@ -23,7 +24,8 @@ const char* const* DeviceProvider::GetInterfaceVersions() {
 }
 
 void DeviceProvider::RunFrame() {
-
+    m_leftGlove.Tick();
+    m_rightGlove.Tick();
 }
 
 bool DeviceProvider::ShouldBlockStandbyMode() {
@@ -38,15 +40,25 @@ void DeviceProvider::LeaveStandby() {
 
 }
 
-
-void DeviceProvider::HandleFingersUpdate(protocol::FingersUpdate fingersUpdate) {
-    // @TODO: 
+void DeviceProvider::HandleGloveUpdate(protocol::ContactGloveState updateState, bool isLeft) {
+    if (isLeft) {
+        m_leftGlove.Update(updateState);
+    } else {
+        m_rightGlove.Update(updateState);
+    }
 }
 
-void DeviceProvider::HandleInputUpdate(protocol::InputUpdate inputUpdate) {
-    // @TODO: 
+bool DeviceProvider::HandleDevicePoseUpdated(uint32_t openVRID, vr::DriverPose_t& pose) {
+    m_poseMutex.exchange(true);
+    m_poseCache[openVRID] = pose;
+    m_poseMutex.exchange(false);
+
+    return true;
 }
 
-void DeviceProvider::HandleGloveStateUpdate(protocol::StateUpdate updateState) {
-    // @TODO: 
+vr::DriverPose_t DeviceProvider::GetCachedPose(uint32_t trackedDeviceIndex) {
+    m_poseMutex.exchange(true);
+    vr::DriverPose_t pose = m_poseCache[trackedDeviceIndex];
+    m_poseMutex.exchange(false);
+    return pose;
 }
