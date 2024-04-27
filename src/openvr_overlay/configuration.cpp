@@ -28,21 +28,53 @@ static bool EnsureDirectoriesExist() {
 	return true;
 }
 
+inline void TryReadBool(bool& propToWriteTo, picojson::object objectToReadFrom, const char* valueName) {
+	try {
+		propToWriteTo = objectToReadFrom[valueName].get<bool>();
+	} catch (std::runtime_error) {}
+}
+inline void TryReadDouble(double& propToWriteTo, picojson::object objectToReadFrom, const char* valueName) {
+	try {
+		propToWriteTo = objectToReadFrom[valueName].get<double>();
+	} catch (std::runtime_error) {}
+}
+inline void TryReadFloat(float& propToWriteTo, picojson::object objectToReadFrom, const char* valueName) {
+	try {
+		propToWriteTo = (float) objectToReadFrom[valueName].get<double>();
+	} catch (std::runtime_error) {}
+}
+inline void TryReadUint16(uint16_t& propToWriteTo, picojson::object objectToReadFrom, const char* valueName) {
+	try {
+		propToWriteTo = (uint16_t) objectToReadFrom[valueName].get<double>();
+	} catch (std::runtime_error) {}
+}
+
 void ReadPoseOffset(protocol::ContactGloveState::CalibrationData::PoseOffset& state, picojson::object& jsonObj) {
 
 	try {
 		picojson::object trackerOffsetRoot = jsonObj["pose"].get<picojson::object>();
-		picojson::object positionRoot = trackerOffsetRoot["position"].get<picojson::object>();
-		picojson::object rotationRoot = trackerOffsetRoot["rotation"].get<picojson::object>();
 
-		state.pos.v[0] = positionRoot["x"].get<double>();
-		state.pos.v[1] = positionRoot["y"].get<double>();
-		state.pos.v[2] = positionRoot["z"].get<double>();
+		try {
+			picojson::object positionRoot = trackerOffsetRoot["position"].get<picojson::object>();
+			TryReadDouble(state.pos.v[0], positionRoot, "x");
+			TryReadDouble(state.pos.v[1], positionRoot, "y");
+			TryReadDouble(state.pos.v[2], positionRoot, "z");
+			// state.pos.v[0] = positionRoot["x"].get<double>();
+			// state.pos.v[1] = positionRoot["y"].get<double>();
+			// state.pos.v[2] = positionRoot["z"].get<double>();
+		}catch (std::runtime_error) {}
 
-		state.rot.x = rotationRoot["x"].get<double>();
-		state.rot.y = rotationRoot["y"].get<double>();
-		state.rot.z = rotationRoot["z"].get<double>();
-		state.rot.w = rotationRoot["w"].get<double>();
+		try {
+			picojson::object rotationRoot = trackerOffsetRoot["rotation"].get<picojson::object>();
+			TryReadDouble(state.rot.x, rotationRoot, "x");
+			TryReadDouble(state.rot.y, rotationRoot, "y");
+			TryReadDouble(state.rot.z, rotationRoot, "z");
+			TryReadDouble(state.rot.w, rotationRoot, "w");
+			// state.rot.x = rotationRoot["x"].get<double>();
+			// state.rot.y = rotationRoot["y"].get<double>();
+			// state.rot.z = rotationRoot["z"].get<double>();
+			// state.rot.w = rotationRoot["w"].get<double>();
+		}catch (std::runtime_error) {}
 	}catch (std::runtime_error) {}
 }
 
@@ -51,23 +83,36 @@ void ReadJoystickCalibration(protocol::ContactGloveState::CalibrationData::Joyst
 	try {
 		picojson::object joystickRoot = jsonObj["joystick"].get<picojson::object>();
 
-		state.threshold		= (float) joystickRoot["threshold"].get<double>();
-		state.forwardAngle	= (float) joystickRoot["forward"].get<double>();
+		TryReadFloat(state.threshold,		joystickRoot, "threshold");
+		TryReadFloat(state.forwardAngle,	joystickRoot, "forward");
+		// state.threshold		= (float) joystickRoot["threshold"].get<double>();
+		// state.forwardAngle	= (float) joystickRoot["forward"].get<double>();
 
-		state.XMax			= (uint16_t) joystickRoot["xmax"].get<double>();
-		state.XMin			= (uint16_t) joystickRoot["xmin"].get<double>();
-		state.YMax			= (uint16_t) joystickRoot["ymax"].get<double>();
-		state.YMin			= (uint16_t) joystickRoot["ymin"].get<double>();
-		state.XNeutral		= (uint16_t) joystickRoot["xneutral"].get<double>();
-		state.YNeutral		= (uint16_t) joystickRoot["yneutral"].get<double>();
+		TryReadUint16(state.XMax,			joystickRoot, "xmax");
+		TryReadUint16(state.XMin,			joystickRoot, "xmin");
+		TryReadUint16(state.YMax,			joystickRoot, "ymax");
+		TryReadUint16(state.YMin,			joystickRoot, "ymin");
+		TryReadUint16(state.XNeutral,		joystickRoot, "xneutral");
+		TryReadUint16(state.YNeutral,		joystickRoot, "yneutral");
+
+		// state.XMax			= (uint16_t) joystickRoot["xmax"].get<double>();
+		// state.XMin			= (uint16_t) joystickRoot["xmin"].get<double>();
+		// state.YMax			= (uint16_t) joystickRoot["ymax"].get<double>();
+		// state.YMin			= (uint16_t) joystickRoot["ymin"].get<double>();
+		// state.XNeutral		= (uint16_t) joystickRoot["xneutral"].get<double>();
+		// state.YNeutral		= (uint16_t) joystickRoot["yneutral"].get<double>();
 	} catch (std::runtime_error) {}
 }
 
 void ReadFingerJointCalibration(protocol::ContactGloveState::FingerJointCalibrationData& state, picojson::object& jsonObj) {
 	try {
-		state.rest		= (uint16_t) jsonObj["rest"].get<double>();
-		state.bend		= (uint16_t) jsonObj["bend"].get<double>();
-		state.close		= (uint16_t) jsonObj["close"].get<double>();
+		// state.rest		= (uint16_t) jsonObj["rest"].get<double>();
+		// state.bend		= (uint16_t) jsonObj["bend"].get<double>();
+		// state.close		= (uint16_t) jsonObj["close"].get<double>();
+
+		TryReadUint16(state.rest,	jsonObj, "rest");
+		TryReadUint16(state.bend,	jsonObj, "bend");
+		TryReadUint16(state.close,	jsonObj, "close");
 	} catch (std::runtime_error) {}
 }
 
@@ -76,9 +121,11 @@ void ReadFingersCalibration(protocol::ContactGloveState::FingerCalibrationData& 
 	try {
 	picojson::object fingersRoot = jsonObj["fingers"].get<picojson::object>();
 
-#define READ_FINGER_CALIBRATION(jointRoot)												\
-	picojson::object jointRoot##Json = fingersRoot[#jointRoot].get<picojson::object>();		\
-	ReadFingerJointCalibration(state.jointRoot, jointRoot##Json);						
+#define READ_FINGER_CALIBRATION(jointRoot)														\
+	try {																						\
+		picojson::object jointRoot##Json = fingersRoot[#jointRoot].get<picojson::object>();		\
+		ReadFingerJointCalibration(state.jointRoot, jointRoot##Json);							\
+	} catch (std::runtime_error) {}
 
 	READ_FINGER_CALIBRATION(thumbRoot);
 	READ_FINGER_CALIBRATION(thumbTip);
@@ -101,14 +148,20 @@ void ReadGestures(protocol::ContactGloveState::CalibrationData::GestureCalibrati
 	try {
 		picojson::object gesturesRoot = jsonObj["gestures"].get<picojson::object>();
 
-		state.grip.activate = (float)gesturesRoot["grip_activate"].get<double>();
-		state.grip.deactivate = (float)gesturesRoot["grip_deactivate"].get<double>();
+		TryReadFloat(state.grip.activate, gesturesRoot, "grip_activate");
+		TryReadFloat(state.grip.deactivate, gesturesRoot, "grip_deactivate");
+		// state.grip.activate = (float)gesturesRoot["grip_activate"].get<double>();
+		// state.grip.deactivate = (float)gesturesRoot["grip_deactivate"].get<double>();
 
-		state.trigger.activate = (float)gesturesRoot["trigger_activate"].get<double>();
-		state.trigger.deactivate = (float)gesturesRoot["trigger_deactivate"].get<double>();
+		TryReadFloat(state.trigger.activate, gesturesRoot, "trigger_activate");
+		TryReadFloat(state.trigger.deactivate, gesturesRoot, "trigger_deactivate");
+		// state.trigger.activate = (float)gesturesRoot["trigger_activate"].get<double>();
+		// state.trigger.deactivate = (float)gesturesRoot["trigger_deactivate"].get<double>();
 
-		state.thumb.activate = (float)gesturesRoot["thumb_activate"].get<double>();
-		state.thumb.deactivate = (float)gesturesRoot["thumb_deactivate"].get<double>();
+		TryReadFloat(state.thumb.activate, gesturesRoot, "thumb_activate");
+		TryReadFloat(state.thumb.deactivate, gesturesRoot, "thumb_deactivate");
+		// state.thumb.activate = (float)gesturesRoot["thumb_activate"].get<double>();
+		// state.thumb.deactivate = (float)gesturesRoot["thumb_deactivate"].get<double>();
 
 	} catch (std::runtime_error) {}
 }
@@ -134,21 +187,32 @@ void LoadConfiguration(AppState& state) {
 
 			auto rootObj = v.get<picojson::object>();
 
-			auto leftGloveObj = rootObj["left"].get<picojson::object>();
-		
-			// Load left glove config
-			ReadPoseOffset(state.gloveLeft.calibration.poseOffset, leftGloveObj);
-			ReadJoystickCalibration(state.gloveLeft.calibration.joystick, leftGloveObj);
-			ReadFingersCalibration(state.gloveLeft.calibration.fingers, leftGloveObj);
-			ReadGestures(state.gloveLeft.calibration.gestures, leftGloveObj);
+			// Read automatic launch
+			// try {
+			// 	state.doAutoLaunch = rootObj["doAutoLaunch"].get<bool>();
+			// } catch (std::runtime_error) {}
+			TryReadBool(state.doAutoLaunch, rootObj, "doAutoLaunch");
 
-			auto rightGloveObj = rootObj["right"].get<picojson::object>();
+			// Load left glove config
+			try {
+				auto leftGloveObj = rootObj["left"].get<picojson::object>();
 		
+				ReadPoseOffset(state.gloveLeft.calibration.poseOffset, leftGloveObj);
+				ReadJoystickCalibration(state.gloveLeft.calibration.joystick, leftGloveObj);
+				ReadFingersCalibration(state.gloveLeft.calibration.fingers, leftGloveObj);
+				ReadGestures(state.gloveLeft.calibration.gestures, leftGloveObj);
+			} catch (std::runtime_error) {}
+
 			// Load right glove config
-			ReadPoseOffset(state.gloveRight.calibration.poseOffset, rightGloveObj);
-			ReadJoystickCalibration(state.gloveRight.calibration.joystick, rightGloveObj);
-			ReadFingersCalibration(state.gloveRight.calibration.fingers, rightGloveObj);
-			ReadGestures(state.gloveRight.calibration.gestures, rightGloveObj);
+			try {
+				auto rightGloveObj = rootObj["right"].get<picojson::object>();
+		
+				ReadPoseOffset(state.gloveRight.calibration.poseOffset, rightGloveObj);
+				ReadJoystickCalibration(state.gloveRight.calibration.joystick, rightGloveObj);
+				ReadFingersCalibration(state.gloveRight.calibration.fingers, rightGloveObj);
+				ReadGestures(state.gloveRight.calibration.gestures, rightGloveObj);
+			} catch (std::runtime_error) {}
+
 		} catch (std::runtime_error){}
 		
 		fileStream.close();
@@ -280,6 +344,9 @@ void SaveConfiguration(AppState& state) {
 
 		config["left"].set<picojson::object>(gloveLeftConfig);
 		config["right"].set<picojson::object>(gloveRightConfig);
+
+		// Write do automatic launch
+		config["doAutoLaunch"].set<bool>(state.doAutoLaunch);
 
 		picojson::value rootV;
 		rootV.set<picojson::object>(config);
