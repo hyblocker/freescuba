@@ -45,8 +45,12 @@ public:
 
     IPCClient* ipcClient;
 
+    // For the SteamVR Overlay
+    bool doAutoLaunch;
+
     // Ui State
     struct UiState {
+
         ScreenState page;
         CalibrationState calibrationState;
         Handedness processingHandedness;

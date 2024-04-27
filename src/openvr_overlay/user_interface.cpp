@@ -718,6 +718,10 @@ void DrawUi(bool isOverlay, AppState& state) {
                 state.uiState.processingHandedness = Handedness::Right;
             }
             DrawGlove("Right Glove", "glove_right", state.gloveRight, state);
+
+            // @TODO: Break settings into function / tab
+            ImGui::Spacing();
+            ImGui::Checkbox("Automatically launch with SteamVR", &state.doAutoLaunch);
             break;
         }
         case ScreenState::ScreenStateCalibrateJoystick: {
