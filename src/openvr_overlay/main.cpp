@@ -1,4 +1,3 @@
-#define NOMINMAX
 #include "overlay_app.hpp"
 #include "contact_glove/serial_communication.hpp"
 #include "ipc_client.hpp"
@@ -20,6 +19,30 @@ constexpr auto GLOVE_TIMEOUT = std::chrono::steady_clock::time_point::duration(s
 #define OPENVR_APPLICATION_KEY "hyblocker.DriverFreeScuba"
 static vr::VROverlayHandle_t s_overlayMainHandle;
 static vr::VROverlayHandle_t s_overlayThumbnailHandle;
+
+static std::string GetExecutableDirectory() {
+    static std::string s_cwd(MAX_PATH, '\0');
+    static bool s_cwdComputed = false;
+
+    if (s_cwdComputed == false)
+    {
+        //Get path to exe (includes the exe file name)
+        //CHAR executablePath[MAX_PATH];
+        GetModuleFileNameA(nullptr, &s_cwd[0], MAX_PATH);
+
+        //Get directory path
+        const size_t lastSlashIndex = s_cwd.rfind('\\');
+        if (std::string::npos != lastSlashIndex) {
+            s_cwd = s_cwd.substr(0, lastSlashIndex);
+            s_cwdComputed = true;
+        }
+        else {
+            throw std::runtime_error("Invalid executable path.");
+        }
+    }
+
+    return s_cwd;
+}
 
 void ActivateMultipleDrivers()
 {
@@ -79,7 +102,7 @@ void InitVR()
     ActivateMultipleDrivers();
 }
 
-void TryCreateVrOverlay() {
+void TryCreateVrOverlay(AppState& state) {
     if (s_overlayMainHandle || !vr::VROverlay()) {
         return;
     }
@@ -99,7 +122,14 @@ void TryCreateVrOverlay() {
     vr::VROverlay()->SetOverlayInputMethod(s_overlayMainHandle, vr::VROverlayInputMethod_Mouse);
     vr::VROverlay()->SetOverlayFlag(s_overlayMainHandle, vr::VROverlayFlags_SendVRDiscreteScrollEvents, true);
 
+    std::string executableDir = GetExecutableDirectory();
+
     // @TODO: Icon
+    // Try registering the overlay with SteamVR
+    vr::VRApplications()->AddApplicationManifest((executableDir + "\\manifest.vrmanifest").c_str(), false);
+    if (!vr::VRApplications()->GetApplicationAutoLaunch(OPENVR_APPLICATION_KEY)) {
+        vr::VRApplications()->SetApplicationAutoLaunch(OPENVR_APPLICATION_KEY, state.doAutoLaunch);
+    }
 }
 
 int main() {
@@ -215,7 +245,7 @@ int main() {
         if (FreeScuba::Overlay::StartWindow()) {
             bool doExecute = true;
             while (doExecute) {
-                TryCreateVrOverlay();
+                TryCreateVrOverlay(state);
 
                 state.dongleAvailable = man.IsConnected();
                 ProcessGlove(state.gloveLeft, gloveLeftConnected);
