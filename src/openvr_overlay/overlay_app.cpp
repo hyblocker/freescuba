@@ -1,7 +1,9 @@
 #include "overlay_app.hpp"
 #include "user_interface.hpp"
+#include "resource.h"
 
 #include <algorithm>
+#include <dwmapi.h>
 
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -31,8 +33,23 @@ namespace FreeScuba {
 
 		bool StartWindow() {
             // Create application window
-            //ImGui_ImplWin32_EnableDpiAwareness();
-            g_wc = { sizeof(g_wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"FreeScubaOverlayWindow", nullptr };
+            ImGui_ImplWin32_EnableDpiAwareness();
+
+            g_wc = {
+                sizeof(g_wc),                                                           // cbSize
+                CS_CLASSDC,                                                             // style
+                WndProc,                                                                // lpfnWndProc
+                0L,                                                                     // cbClsExtra
+                0L,                                                                     // cbWndExtra
+                GetModuleHandle(nullptr),                                               // hInstance
+                LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_FREESCUBA)),     // hIcon
+                nullptr,                                                                // hCursor
+                nullptr,                                                                // hbrBackground
+                nullptr,                                                                // lpszMenuName
+                L"FreeScubaOverlayWindow",                                              // lpszClassName
+                // LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_FREESCUBA))      // hIconSm
+                nullptr
+            };
             ::RegisterClassExW(&g_wc);
             g_hwnd = ::CreateWindowW(g_wc.lpszClassName, L"Free Scuba Settings", WS_OVERLAPPEDWINDOW, 100, 100, g_windowWidth, g_windowHeight, nullptr, nullptr, g_wc.hInstance, nullptr);
 

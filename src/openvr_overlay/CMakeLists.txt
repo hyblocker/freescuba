@@ -32,6 +32,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    enable_language("RC")
+    set (WIN32_RESOURCES ${CMAKE_SOURCE_DIR}/src/openvr_overlay/free_scuba_resources.rc)
+endif()
+
 # Add source files
 file(GLOB_RECURSE SOURCES_API ${CMAKE_SOURCE_DIR}/src/openvr_overlay "*.c" "*.h" "*.hpp" "*.cpp")
 file(GLOB_RECURSE SOURCES_HEADERS ${CMAKE_SOURCE_DIR}/src/include "*.h" "*.hpp")
@@ -52,7 +57,7 @@ set(IMGUI_FILES ${CMAKE_SOURCE_DIR}/vendor/imgui/imgui.cpp
               ${CMAKE_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_win32.cpp)
 
 add_definitions(-D_UNICODE)
-add_executable(FreeScubaOverlay ${SOURCES_API} ${SOURCES_HEADERS} ${IMGUI_FILES})
+add_executable(FreeScubaOverlay ${SOURCES_API} ${SOURCES_HEADERS} ${IMGUI_FILES} ${WIN32_RESOURCES})
 GroupSourcesByFolder(FreeScubaOverlay)
 
 target_include_directories(FreeScubaOverlay
