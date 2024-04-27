@@ -35,6 +35,10 @@ namespace FreeScuba {
         void CleanupRenderTarget();
         LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+        enum DWMA_USE_IMMSERSIVE_DARK_MODE_ENUM {
+            DWMA_USE_IMMERSIVE_DARK_MODE = 20,
+            DWMA_USE_IMMERSIVE_DARK_MODE_PRE_20H1 = 19,
+        };
 
         // Returns instantaneous system time in seconds
         double GetSystemTimeSeconds() {
@@ -47,6 +51,13 @@ namespace FreeScuba {
             QueryPerformanceFrequency(&freq);
 
             return static_cast<double>(t1.QuadPart) / static_cast<double>(freq.QuadPart);
+        }
+
+        void EnableDarkModeTopBar() {
+            const BOOL darkBorder = TRUE;
+            const bool ok =
+                SUCCEEDED(DwmSetWindowAttribute(g_hwnd, DWMA_USE_IMMERSIVE_DARK_MODE, &darkBorder, sizeof(darkBorder)))
+                || SUCCEEDED(DwmSetWindowAttribute(g_hwnd, DWMA_USE_IMMERSIVE_DARK_MODE_PRE_20H1, &darkBorder, sizeof(darkBorder)));
         }
 
         bool StartWindow() {
@@ -82,6 +93,10 @@ namespace FreeScuba {
             // Show the window
             ::ShowWindow(g_hwnd, SW_SHOWDEFAULT);
             ::UpdateWindow(g_hwnd);
+
+
+            // Enable dark mode on the top bar
+            EnableDarkModeTopBar();
 
             // Setup Dear ImGui context
             IMGUI_CHECKVERSION();
