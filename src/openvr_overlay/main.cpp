@@ -125,6 +125,9 @@ void TryCreateVrOverlay(AppState& state) {
     std::string executableDir = GetExecutableDirectory();
 
     // @TODO: Icon
+    std::string iconPath = executableDir + "\\icon_1k.png";
+    vr::VROverlay()->SetOverlayFromFile(s_overlayThumbnailHandle, iconPath.c_str());
+
     // Try registering the overlay with SteamVR
     vr::VRApplications()->AddApplicationManifest((executableDir + "\\manifest.vrmanifest").c_str(), false);
     if (!vr::VRApplications()->GetApplicationAutoLaunch(OPENVR_APPLICATION_KEY)) {
