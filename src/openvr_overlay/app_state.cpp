@@ -2,11 +2,15 @@
 
 AppState::AppState() {
 
+    doAutoLaunch = true;
     dongleAvailable = false;
     gloveLeft = {};
     gloveRight = {};
     uiState = {};
     ipcClient = nullptr;
+
+    uiState.leftGloveBatteryBuffer.Init(BATTERY_WINDOW_SIZE);
+    uiState.rightGloveBatteryBuffer.Init(BATTERY_WINDOW_SIZE);
 
     // Joystick calibration must initially set mins to max value
     gloveLeft.calibration.joystick.XMax              = 62000;

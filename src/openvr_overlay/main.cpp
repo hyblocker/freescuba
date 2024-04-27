@@ -5,7 +5,7 @@
 #include "configuration.hpp"
 
 void ForwardDataToDriver(AppState& state, IPCClient& ipcClient);
-void ProcessGlove(protocol::ContactGloveState& glove, std::chrono::steady_clock::time_point gloveConnected);
+void ProcessGlove(protocol::ContactGloveState& glove, MostCommonElementRingBuffer& batteryRingBuffer, std::chrono::steady_clock::time_point gloveConnected);
 void UpdateGloveInputState(AppState& state);
 
 // Tell the GPU drivers to give the overlay priority over other apps, it's a driver after all
@@ -147,8 +147,6 @@ int main() {
         // Glove timing
         static std::chrono::steady_clock::time_point gloveLeftConnected  = std::chrono::steady_clock::time_point::min();
         static std::chrono::steady_clock::time_point gloveRightConnected = std::chrono::steady_clock::time_point::min();
-        // static std::chrono::steady_clock::time_point gloveLeftConnected  = std::chrono::system_clock::from_time_t(0);
-        // static std::chrono::steady_clock::time_point gloveRightConnected = std::chrono::system_clock::from_time_t(0);
 
         // Init SteamVR
         InitVR();
@@ -248,8 +246,8 @@ int main() {
                 TryCreateVrOverlay(state);
 
                 state.dongleAvailable = man.IsConnected();
-                ProcessGlove(state.gloveLeft, gloveLeftConnected);
-                ProcessGlove(state.gloveRight, gloveRightConnected);
+                ProcessGlove(state.gloveLeft, state.uiState.leftGloveBatteryBuffer, gloveLeftConnected);
+                ProcessGlove(state.gloveRight, state.uiState.rightGloveBatteryBuffer, gloveRightConnected);
                 UpdateGloveInputState(state);
 
                 doExecute = FreeScuba::Overlay::UpdateNativeWindow(state, s_overlayMainHandle);
@@ -279,7 +277,7 @@ int main() {
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define CLAMP(t,a,b) (MAX(MIN(t, b), a))
 
-void ProcessGlove(protocol::ContactGloveState& glove, std::chrono::steady_clock::time_point gloveConnected) {
+void ProcessGlove(protocol::ContactGloveState& glove, MostCommonElementRingBuffer& batteryRingBuffer, std::chrono::steady_clock::time_point gloveConnected) {
 
     // Compute whether we should consider the glove as connected or not
     auto delta = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - gloveConnected);
@@ -329,14 +327,20 @@ void ProcessGlove(protocol::ContactGloveState& glove, std::chrono::steady_clock:
 
         // Battery should only update if it's not invalid (sometimes the battery status is invalid)
         if (glove.gloveBatteryRaw != CONTACT_GLOVE_INVALID_BATTERY) {
-            uint8_t gloveBatteryClamped = CLAMP(glove.gloveBatteryRaw, 0, 100);
-            uint32_t gloveBatteryDelta = glove.gloveBattery - gloveBatteryClamped;
+            uint8_t gloveBatteryClamped = 0;
+            uint8_t gloveBatteryFiltered = CONTACT_GLOVE_INVALID_BATTERY;
 
-            // @FIXME: Battery level can get stuck at low percentages for some reason. Need a better filter to eliminate erroneous values
-            //         Probably because on rare occasions it may send a low battery value (??)
+            // Only continue if the battery ring buffer is valid
+            if (batteryRingBuffer.IsValid()) {
+                batteryRingBuffer.Push(glove.gloveBatteryRaw);
+                gloveBatteryFiltered = batteryRingBuffer.MostCommonElement();
+                gloveBatteryClamped = CLAMP(gloveBatteryFiltered, 0, 100);
+            } else {
+                CLAMP(glove.gloveBatteryRaw, 0, 100);
+            }
 
-            // If the change in battery level is < 5%, accept it, any higher is invalid
-            if (glove.gloveBattery == CONTACT_GLOVE_INVALID_BATTERY || std::abs(gloveBatteryDelta < GLOVE_BATTERY_THRESHOLD)) {
+            // Only update the battery level if we have less than 100%
+            if (gloveBatteryFiltered != CONTACT_GLOVE_INVALID_BATTERY && gloveBatteryFiltered <= 100) {
                 glove.gloveBattery = gloveBatteryClamped;
             }
         }

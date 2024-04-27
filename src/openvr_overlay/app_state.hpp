@@ -2,7 +2,10 @@
 
 #include "contact_glove/serial_communication.hpp"
 #include "ipc_client.hpp"
+#include "ring_buffer.hpp"
 #include <openvr.h>
+
+#define BATTERY_WINDOW_SIZE 128
 
 enum class ScreenState {
     ScreenStateViewData,
@@ -59,6 +62,9 @@ public:
         protocol::ContactGloveState::CalibrationData oldCalibration;
         // Buffer for the temporary, current calibration state. This is not forwarded to the SteamVR driver until the calibration is complete.
         protocol::ContactGloveState::CalibrationData currentCalibration;
+
+        MostCommonElementRingBuffer leftGloveBatteryBuffer;
+        MostCommonElementRingBuffer rightGloveBatteryBuffer;
 
         // For joystick calibration
         uint16_t joystickForwardX;
