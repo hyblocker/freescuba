@@ -13,6 +13,9 @@ const ImVec4 FINGER_CURL_COLOUR = ImVec4(0.39f, 0.72f, 0.18f, 1.0f);
 const ImVec4 FINGER_REVERSE_CURL_COLOUR = ImVec4(0.8f, 0.21f, 0.21f, 1.0f);
 
 void SetupImgui() {
+    ImGuiStyle& style = ImGui::GetStyle();
+
+    // @TODO: ImGui style here
 
 }
 void CleanupImgui() {
@@ -693,7 +696,9 @@ void DrawCalibrateOffsets(AppState& state) {
 }
 
 void DrawUi(bool isOverlay, AppState& state) {
+#ifdef _DEBUG
     ImGui::ShowDemoWindow();
+#endif
 
     const ImGuiIO& io = ImGui::GetIO();
 
