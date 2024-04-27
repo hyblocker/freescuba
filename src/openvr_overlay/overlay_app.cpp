@@ -8,8 +8,11 @@
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+// Framerate handling
+#define MINIMISED_MAX_FPS 60
+
 namespace FreeScuba {
-	namespace Overlay {
+    namespace Overlay {
 
         // Data
         static ID3D11Device*            g_pd3dDevice = nullptr;
@@ -23,6 +26,7 @@ namespace FreeScuba {
         static WNDCLASSEXW              g_wc;
         static BOOL                     s_windowVisible = true;
         static char                     s_textBuf[0x400];
+        static double                   s_lastFrameStartTime = 0;
 
         // Forward declarations of helper functions
         bool CreateDeviceD3D(HWND hWnd);
@@ -31,7 +35,21 @@ namespace FreeScuba {
         void CleanupRenderTarget();
         LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-		bool StartWindow() {
+
+        // Returns instantaneous system time in seconds
+        double GetSystemTimeSeconds() {
+
+            LARGE_INTEGER t1 = {};
+            LARGE_INTEGER freq = {};
+
+            // High resolution windows only clocks
+            QueryPerformanceCounter(&t1);
+            QueryPerformanceFrequency(&freq);
+
+            return static_cast<double>(t1.QuadPart) / static_cast<double>(freq.QuadPart);
+        }
+
+        bool StartWindow() {
             // Create application window
             ImGui_ImplWin32_EnableDpiAwareness();
 
@@ -98,10 +116,19 @@ namespace FreeScuba {
 
             SetupImgui();
 
-            return true;
-		}
+            // Lock the main thread to the current core
+            uint32_t desiredLogicalCore = 1; // @TODO: Change so that we can lock the thread onto a CPU core dynamically after querying system information
+            // This is a bit mask where each bit corresponds to a logical core on the current system. We want to pin this thread onto a single core so that timings info is consistent
+            // Set the bit at 'desiredLogicalCore' to 1
+            uint64_t threadAffinityMask = 1ULL << desiredLogicalCore;
+            SetThreadAffinityMask(GetCurrentThread(), threadAffinityMask);
 
-		void DestroyWindow() {
+            s_lastFrameStartTime = GetSystemTimeSeconds();
+
+            return true;
+        }
+
+        void DestroyWindow() {
             CleanupImgui();
 
             // Cleanup
@@ -113,7 +140,7 @@ namespace FreeScuba {
             ::DestroyWindow(g_hwnd);
             ::UnregisterClassW(g_wc.lpszClassName, g_wc.hInstance);
 
-		}
+        }
 
         // Helper functions
         bool CreateDeviceD3D(HWND hWnd) {
@@ -219,7 +246,7 @@ namespace FreeScuba {
             return ::DefWindowProcW(hWnd, msg, wParam, lParam);
         }
 
-		bool UpdateNativeWindow(AppState& state, vr::VROverlayHandle_t overlayMainHandle) {
+        bool UpdateNativeWindow(AppState& state, vr::VROverlayHandle_t overlayMainHandle) {
 
             ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -377,9 +404,17 @@ namespace FreeScuba {
                     vr::VROverlay()->SetOverlayTexture(overlayMainHandle, &vrTex);
                     vr::VROverlay()->SetOverlayMouseScale(overlayMainHandle, &mouseScale);
                 }
+            } else {
+                double targetFrameTime = 1.0 / MINIMISED_MAX_FPS;
+                double waitTime = targetFrameTime - (GetSystemTimeSeconds() - s_lastFrameStartTime);
+                if (waitTime > 0) {
+                    std::this_thread::sleep_for(std::chrono::duration<double>(waitTime));
+                }
+
+                s_lastFrameStartTime += targetFrameTime;
             }
 
             return true;
-		}
-	}
+        }
+    }
 }
