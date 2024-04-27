@@ -72,9 +72,35 @@ target_link_libraries(FreeScubaOverlay
 	PRIVATE dxgi.lib
 	PRIVATE d3d11.lib
 	PRIVATE d3dcompiler.lib
-    	PRIVATE setupapi.lib
+  PRIVATE setupapi.lib
 	PRIVATE ${CMAKE_SOURCE_DIR}/vendor/openvr/lib/win64/openvr_api.lib)
 
 target_compile_definitions(FreeScubaOverlay
 	PRIVATE NOMINMAX
+)
+
+# Copy vrmanifest
+add_custom_command(
+  TARGET FreeScubaOverlay POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_SOURCE_DIR}/manifest.vrmanifest
+  ${CMAKE_BINARY_DIR}/artifacts/$<CONFIG>/manifest.vrmanifest
+)
+
+
+# Copy icon
+add_custom_command(
+  TARGET FreeScubaOverlay POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_SOURCE_DIR}/assets/icon_1k.png
+  ${CMAKE_BINARY_DIR}/artifacts/$<CONFIG>/icon_1k.png
+)
+
+
+# Copy openvrapi.dll
+add_custom_command(
+  TARGET FreeScubaOverlay POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_SOURCE_DIR}/vendor/openvr/bin/win64/openvr_api.dll
+  ${CMAKE_BINARY_DIR}/artifacts/$<CONFIG>/openvr_api.dll
 )
