@@ -102,11 +102,11 @@ namespace Hekky {
 
 				union {
 					PipeBuffer readBuffer;
-					protocol::Request request;
+					protocol::Request_t request;
 				};
 				union {
 					PipeBuffer writeBuffer;
-					protocol::Response response;
+					protocol::Response_t response;
 				};
 			};
 

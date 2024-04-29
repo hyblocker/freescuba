@@ -144,7 +144,7 @@ void F_CRC_InitialiseTable(void)
  * Returns:		The CRC of the AF_Datos.
  *
  *********************************************************************/
-crc F_CRC_CalculateCheckSum(uint8_t const AF_Datos[], uint16_t VF_nBytes)
+crc F_CRC_CalculateCheckSum(uint8_t const AF_Datos[], size_t VF_nBytes)
 {
     crc	VP_CRCTableValue = INITIAL_VALUE;
     uint16_t VP_bytes = 0;
@@ -184,7 +184,7 @@ crc F_CRC_CalculateCheckSum(uint8_t const AF_Datos[], uint16_t VF_nBytes)
  * Returns:		The CRC of the AF_Datos.
  *
  *********************************************************************/
-crc F_CRC_CalculateCheckSum(uint8_t const AF_Datos[], uint16_t VF_nBytes)
+crc F_CRC_CalculateCheckSum(uint8_t const AF_Datos[], size_t VF_nBytes)
 {
     crc	VP_CRCTableValue = INITIAL_VALUE;
     int16_t VP_bytes = 0;

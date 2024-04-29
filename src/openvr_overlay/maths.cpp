@@ -8,7 +8,7 @@ double DegToRad(const double degrees) {
 	return degrees * M_PI / 180.0;
 }
 float DegToRad(const float degrees) {
-	return degrees * M_PI / 180.0;
+	return static_cast<float>(degrees * M_PI / 180.0);
 }
 
 double RadToDeg(const double rad) {
@@ -16,7 +16,7 @@ double RadToDeg(const double rad) {
 }
 
 float RadToDeg(const float rad) {
-	return rad * 180.0 / M_PI;
+	return static_cast<float>(rad * 180.0 / M_PI);
 }
 
 vr::HmdVector3d_t GetPosition(const vr::HmdMatrix34_t& matrix) {
@@ -116,10 +116,10 @@ vr::HmdQuaternion_t operator*(const vr::HmdQuaternion_t& q, const vr::HmdQuatern
 vr::HmdQuaternionf_t operator*(const vr::HmdQuaternionf_t& q, const vr::HmdQuaternion_t& r) {
 	vr::HmdQuaternionf_t result{};
 
-	result.w = r.w * q.w - r.x * q.x - r.y * q.y - r.z * q.z;
-	result.x = r.w * q.x + r.x * q.w - r.y * q.z + r.z * q.y;
-	result.y = r.w * q.y + r.x * q.z + r.y * q.w - r.z * q.x;
-	result.z = r.w * q.z - r.x * q.y + r.y * q.x + r.z * q.w;
+	result.w = static_cast<float>( r.w * q.w - r.x * q.x - r.y * q.y - r.z * q.z );
+	result.x = static_cast<float>( r.w * q.x + r.x * q.w - r.y * q.z + r.z * q.y );
+	result.y = static_cast<float>( r.w * q.y + r.x * q.z + r.y * q.w - r.z * q.x );
+	result.z = static_cast<float>( r.w * q.z - r.x * q.y + r.y * q.x + r.z * q.w );
 
 	return result;
 }

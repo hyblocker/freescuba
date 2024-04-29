@@ -2,15 +2,11 @@
 #include <openvr.h>
 
 #include "user_interface.hpp"
-#include "imgui_extensions.hpp"
 
 #include "maths.hpp"
 
 // DrawJoystickInput :: Imgui commands to draw a nice joystick control to show what the current joystick value is
 // DrawGlove :: Displays a single Glove's state. Contains the buttons for trigger state change.
-
-const ImVec4 FINGER_CURL_COLOUR = ImVec4(0.39f, 0.72f, 0.18f, 1.0f);
-const ImVec4 FINGER_REVERSE_CURL_COLOUR = ImVec4(0.8f, 0.21f, 0.21f, 1.0f);
 
 void SetupImgui() {
     ImGuiStyle& style = ImGui::GetStyle();
@@ -22,7 +18,7 @@ void CleanupImgui() {
 
 }
 
-void DrawJoystickInput(float valueX, float valueY, float deadzone) {
+void DrawJoystickInput(const float valueX, const float valueY, const float deadzone) {
     const float deadzoneRemapped = deadzone * 100.f;
     const ImU32 whiteColor = IM_COL32(255, 255, 255, 255);
     constexpr float BOX_SIZE = 200;
@@ -48,7 +44,7 @@ void DrawJoystickInput(float valueX, float valueY, float deadzone) {
     ImGui::Dummy(ImVec2(BOX_SIZE, BOX_SIZE));
 }
 
-void DrawGlove(std::string name, std::string id, protocol::ContactGloveState& glove, AppState& state) {
+void DrawGlove(const std::string name, const std::string id, protocol::ContactGloveState_t& glove, AppState& state) {
 
     ImGui::BeginGroupPanel(name.c_str());
     {
@@ -113,8 +109,8 @@ void DrawGlove(std::string name, std::string id, protocol::ContactGloveState& gl
                     ImGui::Spacing();
 
                     if (ImGui::Button("Calibrate Thumbstick")) {
-                        state.uiState.page = ScreenState::ScreenStateCalibrateJoystick;
-                        state.uiState.calibrationState = CalibrationState::State_Entering;
+                        state.uiState.page = ScreenState_t::ScreenStateCalibrateJoystick;
+                        state.uiState.calibrationState = CalibrationState_t::State_Entering;
                     }
 
                     // @TODO: Adjust forward angle for fine tuning
@@ -133,9 +129,8 @@ void DrawGlove(std::string name, std::string id, protocol::ContactGloveState& gl
                 if (ImGui::BeginTable((id + "_fingers_table").c_str(), 3))
                 {
 
-                    char rounded_nums_buffer[32];
-#define DRAW_FINGER_BEND_VALUE(fingerValue) \
-                    ImGui::ProgressBarPositiveNegative(fingerValue, FINGER_CURL_COLOUR, FINGER_REVERSE_CURL_COLOUR, ImVec2(-FLT_MIN, 0), "%.4f");
+// #define DRAW_FINGER_BEND_VALUE(fingerValue) \
+//                     ImGui::ProgressBarPositiveNegative(fingerValue, FINGER_CURL_COLOUR, FINGER_REVERSE_CURL_COLOUR, ImVec2(-FLT_MIN, 0), "%.4f");
 
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
@@ -179,15 +174,15 @@ void DrawGlove(std::string name, std::string id, protocol::ContactGloveState& gl
 
                     ImGui::EndTable();
 
-#undef DRAW_FINGER_BEND_VALUE
+// #undef DRAW_FINGER_BEND_VALUE
                 }
 
                 ImGui::Spacing(); 
                 ImGui::Spacing();
 
                 if (ImGui::Button("Calibrate fingers")) {
-                    state.uiState.page = ScreenState::ScreenStateCalibrateFingers;
-                    state.uiState.calibrationState = CalibrationState::State_Entering;
+                    state.uiState.page = ScreenState_t::ScreenStateCalibrateFingers;
+                    state.uiState.calibrationState = CalibrationState_t::State_Entering;
                 }
 
                 ImGui::Checkbox("Use finger curl", &glove.useCurl);
@@ -234,8 +229,8 @@ void DrawGlove(std::string name, std::string id, protocol::ContactGloveState& gl
                 ImGui::BeginDisabled(glove.trackerIndex == CONTACT_GLOVE_INVALID_DEVICE_ID);
 
                 if (ImGui::Button("Calibrate offset")) {
-                    state.uiState.page = ScreenState::ScreenStateCalibrateOffset;
-                    state.uiState.calibrationState = CalibrationState::State_Entering;
+                    state.uiState.page = ScreenState_t::ScreenStateCalibrateOffset;
+                    state.uiState.calibrationState = CalibrationState_t::State_Entering;
                 }
 
                 ImGui::SameLine();
@@ -279,8 +274,8 @@ void DrawCalibrateJoystick(AppState& state) {
         // @TODO: Style the UI to look pretty
 
         // Isolate the glove we wish to work on
-        protocol::ContactGloveState* desiredGlove = nullptr;
-        if (state.uiState.processingHandedness == Handedness::Left) {
+        protocol::ContactGloveState_t* desiredGlove = nullptr;
+        if (state.uiState.processingHandedness == Handedness_t::Left) {
             ImGui::Text("Calibrating Left Joystick...");
             desiredGlove = &state.gloveLeft;
         }
@@ -290,12 +285,12 @@ void DrawCalibrateJoystick(AppState& state) {
         }
 
         // Handled here so that we don't get a blank frame
-        if (state.uiState.calibrationState == CalibrationState::State_Entering) {
+        if (state.uiState.calibrationState == CalibrationState_t::State_Entering) {
             // Copy the old calibration data
-            memcpy(&state.uiState.oldCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState::CalibrationData));
+            memcpy(&state.uiState.oldCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState_t::CalibrationData_t));
             // Create a new calibration state, and 0 the joystick calibration
-            memcpy(&state.uiState.currentCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState::CalibrationData));
-            memset(&state.uiState.currentCalibration.joystick, 0, sizeof(protocol::ContactGloveState::CalibrationData::JoystickCalibration));
+            memcpy(&state.uiState.currentCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState_t::CalibrationData_t));
+            memset(&state.uiState.currentCalibration.joystick, 0, sizeof(protocol::ContactGloveState_t::CalibrationData_t::JoystickCalibration_t));
             
             // Set intial values for calibration
             state.uiState.currentCalibration.joystick.XMax		= 0x0000;
@@ -312,7 +307,7 @@ void DrawCalibrateJoystick(AppState& state) {
             state.uiState.currentCalibration.joystick.threshold = desiredGlove->calibration.joystick.threshold;
 
             // Done. Move to DiscoverBounds
-            state.uiState.calibrationState = CalibrationState::Joystick_DiscoverBounds;
+            state.uiState.calibrationState = CalibrationState_t::Joystick_DiscoverBounds;
         }
 
         // Cache if the buttons are pressed
@@ -322,7 +317,7 @@ void DrawCalibrateJoystick(AppState& state) {
         
         // Calibration code
         switch (state.uiState.calibrationState) {
-            case CalibrationState::Joystick_DiscoverBounds:
+            case CalibrationState_t::Joystick_DiscoverBounds:
                 {
                     ImGui::Text("Move the joystick in all directions for a few seconds...");
 
@@ -338,12 +333,12 @@ void DrawCalibrateJoystick(AppState& state) {
 
                     if (ImGui::Button("Continue") || anyButtonPressedNoJoystick) {
                         // Move to the next state
-                        state.uiState.calibrationState = CalibrationState::Joystick_DiscoverNeutral;
+                        state.uiState.calibrationState = CalibrationState_t::Joystick_DiscoverNeutral;
                     }
 
                     break;
                 }
-            case CalibrationState::Joystick_DiscoverNeutral:
+            case CalibrationState_t::Joystick_DiscoverNeutral:
                 {
                     // Discover neutral for joystick
                     ImGui::Text("Do not move the joystick, let it settle.");
@@ -356,12 +351,12 @@ void DrawCalibrateJoystick(AppState& state) {
 
                     if (ImGui::Button("Continue") || anyButtonPressedNoJoystick) {
                         // Move to the next state
-                        state.uiState.calibrationState = CalibrationState::Joystick_DiscoverForward;
+                        state.uiState.calibrationState = CalibrationState_t::Joystick_DiscoverForward;
                     }
 
                     break;
                 }
-            case CalibrationState::Joystick_DiscoverForward:
+            case CalibrationState_t::Joystick_DiscoverForward:
                 {
                     // Discover the forward direction of the joystick, compute an output angle from this
                     ImGui::Text("Move the joystick forward.");
@@ -389,11 +384,11 @@ void DrawCalibrateJoystick(AppState& state) {
                         state.uiState.currentCalibration.joystick.forwardAngle = angle; // Negate the angle, and rotate -90 degrees
 
                         // Move to the next state
-                        state.uiState.calibrationState = CalibrationState::State_Entering;
-                        state.uiState.page = ScreenState::ScreenStateViewData;
+                        state.uiState.calibrationState = CalibrationState_t::State_Entering;
+                        state.uiState.page = ScreenState_t::ScreenStateViewData;
 
                         // Copy the new calibration back
-                        memcpy(&desiredGlove->calibration , &state.uiState.currentCalibration, sizeof(protocol::ContactGloveState::CalibrationData));
+                        memcpy(&desiredGlove->calibration , &state.uiState.currentCalibration, sizeof(protocol::ContactGloveState_t::CalibrationData_t));
                     }
 
                     break;
@@ -407,8 +402,8 @@ void DrawCalibrateJoystick(AppState& state) {
 
         if (ImGui::Button("Cancel")) {
             // Move to the data page
-            state.uiState.calibrationState = CalibrationState::State_Entering;
-            state.uiState.page = ScreenState::ScreenStateViewData;
+            state.uiState.calibrationState = CalibrationState_t::State_Entering;
+            state.uiState.page = ScreenState_t::ScreenStateViewData;
 
             // Set the old calibration
             // Should not be necessary
@@ -422,8 +417,8 @@ void DrawCalibrateFingers(AppState& state) {
 
     ImGui::BeginGroupPanel("Finger Calibration");
     {
-        protocol::ContactGloveState* desiredGlove = nullptr;
-        if (state.uiState.processingHandedness == Handedness::Left) {
+        protocol::ContactGloveState_t* desiredGlove = nullptr;
+        if (state.uiState.processingHandedness == Handedness_t::Left) {
             ImGui::Text("Calibrating Left Glove Fingers...");
             desiredGlove = &state.gloveLeft;
         }
@@ -433,16 +428,16 @@ void DrawCalibrateFingers(AppState& state) {
         }
 
         // Handled here so that we don't get a blank frame
-        if (state.uiState.calibrationState == CalibrationState::State_Entering) {
+        if (state.uiState.calibrationState == CalibrationState_t::State_Entering) {
             // Copy the old calibration data
-            memcpy(&state.uiState.oldCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState::CalibrationData));
+            memcpy(&state.uiState.oldCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState_t::CalibrationData_t));
 
             // Create a new calibration state, and 0 out the finger calibration
-            memcpy(&state.uiState.currentCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState::CalibrationData));
-            memset(&state.uiState.currentCalibration.fingers, 0, sizeof(protocol::ContactGloveState::FingerCalibrationData));
+            memcpy(&state.uiState.currentCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState_t::CalibrationData_t));
+            memset(&state.uiState.currentCalibration.fingers, 0, sizeof(protocol::ContactGloveState_t::FingerCalibrationData_t));
             
             // Done. Move to DiscoverBounds
-            state.uiState.calibrationState = CalibrationState::Fingers_DiscoverNeutral;
+            state.uiState.calibrationState = CalibrationState_t::Fingers_DiscoverNeutral;
         }
 
         // Cache if the buttons are pressed
@@ -452,7 +447,7 @@ void DrawCalibrateFingers(AppState& state) {
 
         // Calibration code
         switch (state.uiState.calibrationState) {
-            case CalibrationState::Fingers_DiscoverNeutral:
+            case CalibrationState_t::Fingers_DiscoverNeutral:
             {
                 // Fingers are open, thumb is closed
                 ImGui::Text("Rest your fingers naturally, and close your thumb. Try aligning the fingers with the way you see them in VRChat for better accuracy.");
@@ -489,12 +484,12 @@ void DrawCalibrateFingers(AppState& state) {
 
                 if (ImGui::Button("Continue") || anyButtonPressedJoystick) {
                     // Move to the next state
-                    state.uiState.calibrationState = CalibrationState::Fingers_DiscoverClosed;
+                    state.uiState.calibrationState = CalibrationState_t::Fingers_DiscoverClosed;
                 }
 
                 break;
             }
-            case CalibrationState::Fingers_DiscoverClosed:
+            case CalibrationState_t::Fingers_DiscoverClosed:
             {
                 // Fingers are closed, thumb is expanded
                 ImGui::Text("Close your fingers, and rest your thumb naturally. Try aligning the fingers with the way you see them in VRChat for better accuracy.");
@@ -534,16 +529,16 @@ void DrawCalibrateFingers(AppState& state) {
                     // state.uiState.calibrationState = CalibrationState::Fingers_DiscoverClosed;
 
                     // Move to the next state
-                    state.uiState.calibrationState = CalibrationState::State_Entering;
-                    state.uiState.page = ScreenState::ScreenStateViewData;
+                    state.uiState.calibrationState = CalibrationState_t::State_Entering;
+                    state.uiState.page = ScreenState_t::ScreenStateViewData;
 
                     // Copy the new calibration back
-                    memcpy(&desiredGlove->calibration, &state.uiState.currentCalibration, sizeof(protocol::ContactGloveState::CalibrationData));
+                    memcpy(&desiredGlove->calibration, &state.uiState.currentCalibration, sizeof(protocol::ContactGloveState_t::CalibrationData_t));
                 }
 
                 break;
             }
-            case CalibrationState::Fingers_DiscoverBackwardsBend:
+            case CalibrationState_t::Fingers_DiscoverBackwardsBend:
             {
                 // Maybe unecessary, with linear interpolation this should be a given
 
@@ -558,8 +553,8 @@ void DrawCalibrateFingers(AppState& state) {
 
         if (ImGui::Button("Cancel")) {
             // Move to the data page
-            state.uiState.calibrationState = CalibrationState::State_Entering;
-            state.uiState.page = ScreenState::ScreenStateViewData;
+            state.uiState.calibrationState = CalibrationState_t::State_Entering;
+            state.uiState.page = ScreenState_t::ScreenStateViewData;
 
             // Set the old calibration
             // Should not be necessary
@@ -573,8 +568,8 @@ void DrawCalibrateOffsets(AppState& state) {
 
     ImGui::BeginGroupPanel("Pose Offset Calibration");
     {
-        protocol::ContactGloveState* desiredGlove = nullptr;
-        if (state.uiState.processingHandedness == Handedness::Left) {
+        protocol::ContactGloveState_t* desiredGlove = nullptr;
+        if (state.uiState.processingHandedness == Handedness_t::Left) {
             ImGui::Text("Calibrating Left Glove Pose Offset...");
             desiredGlove = &state.gloveLeft;
         } else {
@@ -583,16 +578,16 @@ void DrawCalibrateOffsets(AppState& state) {
         }
 
         // Handled here so that we don't get a blank frame
-        if (state.uiState.calibrationState == CalibrationState::State_Entering) {
+        if (state.uiState.calibrationState == CalibrationState_t::State_Entering) {
             // Copy the old calibration data
-            memcpy(&state.uiState.oldCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState::CalibrationData));
+            memcpy(&state.uiState.oldCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState_t::CalibrationData_t));
 
             // Create a new calibration state, and 0 out the pose calibration
-            memcpy(&state.uiState.currentCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState::CalibrationData));
-            memset(&state.uiState.currentCalibration.poseOffset, 0, sizeof(protocol::ContactGloveState::CalibrationData::PoseOffset));
+            memcpy(&state.uiState.currentCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState_t::CalibrationData_t));
+            memset(&state.uiState.currentCalibration.poseOffset, 0, sizeof(protocol::ContactGloveState_t::CalibrationData_t::PoseOffset_t));
 
             // Done. Move to DiscoverBounds
-            state.uiState.calibrationState = CalibrationState::PoseOffset_FindInitialPose;
+            state.uiState.calibrationState = CalibrationState_t::PoseOffset_FindInitialPose;
         }
 
         // Cache if the buttons are pressed
@@ -602,13 +597,13 @@ void DrawCalibrateOffsets(AppState& state) {
 
         // Calibration code
         switch (state.uiState.calibrationState) {
-            case CalibrationState::PoseOffset_FindInitialPose:
+            case CalibrationState_t::PoseOffset_FindInitialPose:
             {
                 ImGui::Text("Waiting for a valid pose. Please make sure your tracker is on, and tracking.");
                 
                 // Request a driver pose from the server
-                protocol::Request req = protocol::Request(desiredGlove->trackerIndex);
-                protocol::Response response = state.ipcClient->SendBlocking(req);
+                protocol::Request_t req = protocol::Request_t(desiredGlove->trackerIndex);
+                protocol::Response_t response = state.ipcClient->SendBlocking(req);
 
                 if (response.type == protocol::ResponseDevicePose) {
 
@@ -619,7 +614,7 @@ void DrawCalibrateOffsets(AppState& state) {
                     state.uiState.initialTrackerRot = driverPose.qRotation * desiredGlove->calibration.poseOffset.rot;
 
                     // Move to the next state
-                    state.uiState.calibrationState = CalibrationState::PoseOffset_Moving;
+                    state.uiState.calibrationState = CalibrationState_t::PoseOffset_Moving;
 
                     // Tell the driver to ignore pose updates, we shall monitor the device's transform in the meantime
                     desiredGlove->ignorePose = true;
@@ -627,7 +622,7 @@ void DrawCalibrateOffsets(AppState& state) {
 
                 break;
             }
-        case CalibrationState::PoseOffset_Moving:
+        case CalibrationState_t::PoseOffset_Moving:
         {
             ImGui::Text("Line up the glove with your hand. Once you find the right spot, press any button to assign the offset.");
 
@@ -640,8 +635,8 @@ void DrawCalibrateOffsets(AppState& state) {
             if (ImGui::Button("Continue") || anyButtonPressedJoystick) {
 
                 // Request a driver pose from the server
-                protocol::Request req = protocol::Request(desiredGlove->trackerIndex);
-                protocol::Response response = state.ipcClient->SendBlocking(req);
+                protocol::Request_t req = protocol::Request_t(desiredGlove->trackerIndex);
+                protocol::Response_t response = state.ipcClient->SendBlocking(req);
 
                 if (response.type == protocol::ResponseDevicePose) {
 
@@ -665,11 +660,11 @@ void DrawCalibrateOffsets(AppState& state) {
                     desiredGlove->ignorePose = false;
 
                     // Copy the new calibration back
-                    memcpy(&desiredGlove->calibration, &state.uiState.currentCalibration, sizeof(protocol::ContactGloveState::CalibrationData));
+                    memcpy(&desiredGlove->calibration, &state.uiState.currentCalibration, sizeof(protocol::ContactGloveState_t::CalibrationData_t));
 
                     // Move to the next state
-                    state.uiState.calibrationState = CalibrationState::State_Entering;
-                    state.uiState.page = ScreenState::ScreenStateViewData;
+                    state.uiState.calibrationState = CalibrationState_t::State_Entering;
+                    state.uiState.page = ScreenState_t::ScreenStateViewData;
                 }
             }
 
@@ -688,14 +683,14 @@ void DrawCalibrateOffsets(AppState& state) {
             desiredGlove->ignorePose = false;
 
             // Move to the data page
-            state.uiState.calibrationState = CalibrationState::State_Entering;
-            state.uiState.page = ScreenState::ScreenStateViewData;
+            state.uiState.calibrationState = CalibrationState_t::State_Entering;
+            state.uiState.page = ScreenState_t::ScreenStateViewData;
         }
     }
     ImGui::EndGroupPanel();
 }
 
-void DrawUi(bool isOverlay, AppState& state) {
+void DrawUi(const bool isOverlay, AppState& state) {
 #ifdef _DEBUG
     ImGui::ShowDemoWindow();
 #endif
@@ -709,13 +704,13 @@ void DrawUi(bool isOverlay, AppState& state) {
     ImGui::Begin("FreeScuba - Open source contact gloves driver");
 
     switch (state.uiState.page) {
-        case ScreenState::ScreenStateViewData: {
-            if (state.uiState.page == ScreenState::ScreenStateViewData) {
-                state.uiState.processingHandedness = Handedness::Left;
+        case ScreenState_t::ScreenStateViewData: {
+            if (state.uiState.page == ScreenState_t::ScreenStateViewData) {
+                state.uiState.processingHandedness = Handedness_t::Left;
             }
             DrawGlove("Left Glove", "glove_left", state.gloveLeft, state);
-            if (state.uiState.page == ScreenState::ScreenStateViewData) {
-                state.uiState.processingHandedness = Handedness::Right;
+            if (state.uiState.page == ScreenState_t::ScreenStateViewData) {
+                state.uiState.processingHandedness = Handedness_t::Right;
             }
             DrawGlove("Right Glove", "glove_right", state.gloveRight, state);
 
@@ -724,15 +719,15 @@ void DrawUi(bool isOverlay, AppState& state) {
             ImGui::Checkbox("Automatically launch with SteamVR", &state.doAutoLaunch);
             break;
         }
-        case ScreenState::ScreenStateCalibrateJoystick: {
+        case ScreenState_t::ScreenStateCalibrateJoystick: {
             DrawCalibrateJoystick(state);
             break;
         }
-        case ScreenState::ScreenStateCalibrateFingers: {
+        case ScreenState_t::ScreenStateCalibrateFingers: {
             DrawCalibrateFingers(state);
             break;
         }
-        case ScreenState::ScreenStateCalibrateOffset: {
+        case ScreenState_t::ScreenStateCalibrateOffset: {
             DrawCalibrateOffsets(state);
             break;
         }

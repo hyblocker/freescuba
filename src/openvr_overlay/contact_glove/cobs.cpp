@@ -1,7 +1,7 @@
 #include "cobs.hpp"
 #include <cinttypes>
 
-void encode(const uint8_t* ptr, uint32_t length, uint8_t* dst) {
+void cobs::encode(const uint8_t* ptr, uint32_t length, uint8_t* dst) {
 	#define FinishBlock(X) (*code_ptr = (X), code_ptr = dst++, code = 0x01)
 
 	const uint8_t* end = ptr + length;

@@ -7,7 +7,8 @@ constexpr uint8_t RING_BUFFER_VALUE_RANGE = 255;
 MostCommonElementRingBuffer::MostCommonElementRingBuffer()
 	: m_elements(nullptr), m_counter(nullptr), m_size(0), m_write(0), m_occupiedSize(0) {}
 
-MostCommonElementRingBuffer::MostCommonElementRingBuffer(uint32_t size)
+
+MostCommonElementRingBuffer::MostCommonElementRingBuffer(const uint32_t size)
 	: m_elements(nullptr), m_counter(nullptr), m_size(size), m_write(0), m_occupiedSize(0)
 {
 	m_elements = static_cast<uint8_t*>(malloc(size * sizeof(uint8_t)));
@@ -20,7 +21,7 @@ MostCommonElementRingBuffer::MostCommonElementRingBuffer(uint32_t size)
 		}
 	}
 }
-void MostCommonElementRingBuffer::Init(uint32_t size)
+void MostCommonElementRingBuffer::Init(const uint32_t size)
 {
 	m_elements		= nullptr;
 	m_counter		= nullptr;
@@ -61,7 +62,7 @@ void MostCommonElementRingBuffer::Reset() {
 	}
 }
 
-void MostCommonElementRingBuffer::Push(uint8_t value) {
+void MostCommonElementRingBuffer::Push(const uint8_t value) {
 	if (m_elements != nullptr && m_counter != nullptr) {
 
 		// Increase the occupied size until we fill the buffer
@@ -81,7 +82,7 @@ void MostCommonElementRingBuffer::Push(uint8_t value) {
 	}
 }
 
-uint8_t MostCommonElementRingBuffer::MostCommonElement() {
+const uint8_t MostCommonElementRingBuffer::MostCommonElement() const {
 	if (m_elements != nullptr && m_counter != nullptr) {
 
 		uint32_t max_count = 0;

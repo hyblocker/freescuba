@@ -5,7 +5,7 @@
 
 namespace cobs {
 
-    size_t encode(const uint8_t* ptr, uint32_t length, uint8_t* dst);
+    void encode(const uint8_t* ptr, uint32_t length, uint8_t* dst);
     size_t decode(uint8_t* buffer, const size_t size);
 }
 

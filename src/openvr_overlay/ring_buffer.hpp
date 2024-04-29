@@ -9,14 +9,14 @@ class MostCommonElementRingBuffer {
 
 public:
 	MostCommonElementRingBuffer();
-	MostCommonElementRingBuffer(uint32_t size);
+	MostCommonElementRingBuffer(const uint32_t size);
 	~MostCommonElementRingBuffer();
 
-	void Init(uint32_t size);
+	void Init(const uint32_t size);
 	void Reset();
-	void Push(uint8_t value);
-	uint8_t MostCommonElement();
-	inline bool IsValid() { return m_elements != nullptr; }
+	void Push(const uint8_t value);
+	const uint8_t MostCommonElement() const;
+	inline bool IsValid() const { return m_elements != nullptr; }
 
 private:
 	uint8_t* m_elements;

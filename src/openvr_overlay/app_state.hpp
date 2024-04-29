@@ -5,21 +5,22 @@
 #include "ring_buffer.hpp"
 #include <openvr.h>
 
-#define BATTERY_WINDOW_SIZE 128
+// #define BATTERY_WINDOW_SIZE 128
+constexpr uint8_t BATTERY_WINDOW_SIZE = 128;
 
-enum class ScreenState {
+enum class ScreenState_t {
     ScreenStateViewData,
     ScreenStateCalibrateJoystick,
     ScreenStateCalibrateFingers,
     ScreenStateCalibrateOffset,
 };
 
-enum class Handedness {
+enum class Handedness_t {
     Left,
     Right
 };
 
-enum class CalibrationState {
+enum class CalibrationState_t {
     State_Entering = 0,
     // Stages for joystick calibration
     Joystick_DiscoverBounds = 1,
@@ -42,8 +43,8 @@ public:
     AppState();
 
     // Protocol state
-    protocol::ContactGloveState gloveLeft;
-    protocol::ContactGloveState gloveRight;
+    protocol::ContactGloveState_t gloveLeft;
+    protocol::ContactGloveState_t gloveRight;
     bool dongleAvailable;
 
     IPCClient* ipcClient;
@@ -52,16 +53,16 @@ public:
     bool doAutoLaunch;
 
     // Ui State
-    struct UiState {
+    struct UiState_t {
 
-        ScreenState page;
-        CalibrationState calibrationState;
-        Handedness processingHandedness;
+        ScreenState_t page;
+        CalibrationState_t calibrationState;
+        Handedness_t processingHandedness;
 
         // Buffer for the previous calibration state
-        protocol::ContactGloveState::CalibrationData oldCalibration;
+        protocol::ContactGloveState_t::CalibrationData_t oldCalibration;
         // Buffer for the temporary, current calibration state. This is not forwarded to the SteamVR driver until the calibration is complete.
-        protocol::ContactGloveState::CalibrationData currentCalibration;
+        protocol::ContactGloveState_t::CalibrationData_t currentCalibration;
 
         MostCommonElementRingBuffer leftGloveBatteryBuffer;
         MostCommonElementRingBuffer rightGloveBatteryBuffer;
@@ -71,7 +72,7 @@ public:
         uint16_t joystickForwardY;
 
         struct {
-            struct UiGloveButtonsState {
+            struct UiGloveButtonsState_t {
                 bool systemUp;
                 bool systemDown;
                 bool buttonUp;
@@ -79,12 +80,12 @@ public:
                 bool joystickClick;
             };
 
-            UiGloveButtonsState left;
-            UiGloveButtonsState right;
-            UiGloveButtonsState releasedLeft;
-            UiGloveButtonsState releasedRight;
-            UiGloveButtonsState prevLeft;
-            UiGloveButtonsState prevRight;
+            UiGloveButtonsState_t left;
+            UiGloveButtonsState_t right;
+            UiGloveButtonsState_t releasedLeft;
+            UiGloveButtonsState_t releasedRight;
+            UiGloveButtonsState_t prevLeft;
+            UiGloveButtonsState_t prevRight;
 
         } gloveButtons;
 

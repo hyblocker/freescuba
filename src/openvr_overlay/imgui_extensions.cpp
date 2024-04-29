@@ -132,7 +132,7 @@ ImVec2 ImGui::GetCursorPosAbsolute() {
     return ImGui::GetCurrentWindowRead()->DC.CursorPos;
 }
 
-void ImGui::ProgressBarPositiveNegative(float fraction, ImVec4 positive, ImVec4 negative, const ImVec2& size_arg, const char* overlay)
+void ImGui::ProgressBarPositiveNegative(float fraction, const ImVec4 positive, const ImVec4 negative, const ImVec2& size_arg, const char* overlay)
 {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)

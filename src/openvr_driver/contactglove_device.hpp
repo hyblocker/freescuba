@@ -13,7 +13,7 @@ const double INPUT_FREQUENCY = 1000.0 / 90.0; // 90Hz input thread
 
 const short NUM_BONES = static_cast<short>(HandSkeletonBone::kHandSkeletonBone_Count);
 
-enum class KnuckleDeviceComponentIndex : uint8_t {
+enum class KnuckleDeviceComponentIndex_t : uint8_t {
     SystemClick = 0,
     SystemTouch,
     TriggerClick,
@@ -63,18 +63,18 @@ public:
 public:
     // Steamvr Tick
     void Tick();
-    void Update(const protocol::ContactGloveState& updateState);
-    void UpdateSkeletalInput(const protocol::ContactGloveState& updateState);
-    void UpdateInputs(const protocol::ContactGloveState& updateState);
+    void Update(const protocol::ContactGloveState_t& updateState);
+    void UpdateSkeletalInput(const protocol::ContactGloveState_t& updateState);
+    void UpdateInputs(const protocol::ContactGloveState_t& updateState);
     void SetupProps();
-    void ApproximateCurls(const protocol::ContactGloveState& updateState);
+    void ApproximateCurls(const protocol::ContactGloveState_t& updateState);
     float ApproximateSingleFingerCurl(HandSkeletonBone metacarpal, HandSkeletonBone distal);
 
     void PoseUpdateThread();
     void InputUpdateThread();
 
 private:
-    void HandleGesture(ThresholdState& param, const protocol::ContactGloveState::CalibrationData::GestureThreshold& thresholds, const float value);
+    void HandleGesture(ThresholdState& param, const protocol::ContactGloveState_t::CalibrationData_t::GestureThreshold_t& thresholds, const float value);
 
 private:
     uint32_t m_deviceId;
@@ -116,10 +116,10 @@ private:
     vr::VRInputComponentHandle_t m_haptics;
     vr::VRInputComponentHandle_t m_skeletalComponentHandle;
     vr::VRBoneTransform_t m_handTransforms[NUM_BONES];
-    vr::VRInputComponentHandle_t m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex::_Count)];
+    vr::VRInputComponentHandle_t m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::_Count)];
 
-    protocol::ContactGloveState::CalibrationData::PoseOffset m_poseOffset;
-    protocol::ContactGloveState m_lastState;
+    protocol::ContactGloveState_t::CalibrationData_t::PoseOffset_t m_poseOffset;
+    protocol::ContactGloveState_t m_lastState;
 
     // Skeletal input simulation
     GloveHandSimulation m_handSimulation;

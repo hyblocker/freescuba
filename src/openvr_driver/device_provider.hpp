@@ -23,7 +23,7 @@ public:
 
     bool HandleDevicePoseUpdated(uint32_t openVRID, vr::DriverPose_t& pose);
 
-    void HandleGloveUpdate(protocol::ContactGloveState updateState, bool isLeft);
+    void HandleGloveUpdate(protocol::ContactGloveState_t updateState, bool isLeft);
 
     vr::DriverPose_t GetCachedPose(uint32_t trackedDeviceIndex);
 

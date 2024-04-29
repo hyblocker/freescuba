@@ -6,11 +6,10 @@
 #include <iomanip>
 
 static const std::string c_serialDeviceId = "VID_10C4&PID_7B27";
-static const uint32_t c_listenerWaitTime = 1000;
+static const uint32_t LISTENER_WAIT_TIME = 1000;
 
-bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket);
-
-static void PrintBuffer(std::string name, uint8_t* buffer, size_t size) {
+static void PrintBuffer(const std::string name, const uint8_t* buffer, const size_t size) {
+    // @FIXME: Can we make this neater using printf?
     std::cout << "uint8_t " << name << "[" << std::dec << size << "] = { " << std::flush;
 
     for (size_t i = 0; i < size; i++) {
@@ -23,29 +22,28 @@ static void PrintBuffer(std::string name, uint8_t* buffer, size_t size) {
     std::cout << " };" << std::endl;
 }
 
-int SerialCommunicationManager::GetComPort() {
-    // if (m_configuration.overridePort) {
-    //     return m_configuration.port;
-    // }
+int SerialCommunicationManager::GetComPort() const {
 
     HDEVINFO DeviceInfoSet;
-    DWORD DeviceIndex = 0;
     SP_DEVINFO_DATA DeviceInfoData;
-    std::string DevEnum = "USB";
-    char szBuffer[1024] = { 0 };
     DEVPROPTYPE ulPropertyType;
-    DWORD dwSize = 0;
-    DWORD Error = 0;
+    DWORD DeviceIndex       = 0;
+    std::string DevEnum     = "USB";
+    char szBuffer[1024]     = { 0 };
+    DWORD dwSize            = 0;
+    DWORD Error             = 0;
 
     DeviceInfoSet = SetupDiGetClassDevsA(NULL, DevEnum.c_str(), NULL, DIGCF_ALLCLASSES | DIGCF_PRESENT);
 
-    if (DeviceInfoSet == INVALID_HANDLE_VALUE) return -1;
+    if (DeviceInfoSet == INVALID_HANDLE_VALUE) {
+        return -1;
+    }
 
     ZeroMemory(&DeviceInfoData, sizeof(SP_DEVINFO_DATA));
     DeviceInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
     // Receive information about an enumerated device
 
-    while (SetupDiEnumDeviceInfo(DeviceInfoSet, DeviceIndex, &DeviceInfoData)) {
+    while ( SetupDiEnumDeviceInfo(DeviceInfoSet, DeviceIndex, &DeviceInfoData) ) {
         DeviceIndex++;
 
         // Retrieves a specified Plug and Play device property
@@ -57,36 +55,45 @@ int SerialCommunicationManager::GetComPort() {
             (BYTE*)szBuffer,
             sizeof(szBuffer),  // The size, in bytes
             &dwSize)) {
-            HKEY hDeviceRegistryKey;
-            if (std::string(szBuffer).find(c_serialDeviceId) == std::string::npos) continue;
-            hDeviceRegistryKey = SetupDiOpenDevRegKey(DeviceInfoSet, &DeviceInfoData, DICS_FLAG_GLOBAL, 0, DIREG_DEV, KEY_READ);
-            if (hDeviceRegistryKey == INVALID_HANDLE_VALUE) {
+
+            if ( std::string(szBuffer).find(c_serialDeviceId) == std::string::npos ) {
+                continue;
+            }
+
+            HKEY hDeviceRegistryKey = { 0 };
+            hDeviceRegistryKey      = SetupDiOpenDevRegKey(DeviceInfoSet, &DeviceInfoData, DICS_FLAG_GLOBAL, 0, DIREG_DEV, KEY_READ);
+
+            if ( hDeviceRegistryKey == INVALID_HANDLE_VALUE ) {
                 Error = GetLastError();
                 break;
-            }
-            else {
-                char pszPortName[20];
-                DWORD dwSize = sizeof(pszPortName);
-                DWORD dwType = 0;
+            } else {
+                char pszPortName[20]    = { 0 };
+                DWORD dwSize            = sizeof(pszPortName);
+                DWORD dwType            = 0;
 
-                if ((RegQueryValueExA(hDeviceRegistryKey, "PortName", NULL, &dwType, (LPBYTE)pszPortName, &dwSize) == ERROR_SUCCESS) && (dwType == REG_SZ)) {
+                if (
+                    ( RegQueryValueExA(hDeviceRegistryKey, "PortName", NULL, &dwType, (LPBYTE)pszPortName, &dwSize) == ERROR_SUCCESS ) &&
+                    ( dwType == REG_SZ ) )
+                {
+                    // @FIXME: Avoid allocating memory by using a std::string
+                    //         Should we consider implementing a substr function which takes in a char* ?
                     std::string sPortName = pszPortName;
                     try {
-                        if (sPortName.substr(0, 3) == "COM") {
-                            int nPortNr = std::stoi(pszPortName + 3);
-                            if (nPortNr != 0) {
+                        if ( sPortName.substr( 0, 3 ) == "COM" ) {
+                            int nPortNr = std::stoi( pszPortName + 3 );
+                            if ( nPortNr != 0 ) {
                                 return nPortNr;
                             }
                         }
-                    }
-                    catch (...) {
+                    } catch ( ... ) {
                         printf("Parsing failed for a port\n");
                     }
                 }
                 RegCloseKey(hDeviceRegistryKey);
             }
         }
-    }
+    } // while ( SetupDiEnumDeviceInfo(DeviceInfoSet, DeviceIndex, &DeviceInfoData) )
+
     if (DeviceInfoSet) {
         SetupDiDestroyDeviceInfoList(DeviceInfoSet);
     }
@@ -119,20 +126,23 @@ static std::string GetLastErrorAsString() {
 }
 
 bool SerialCommunicationManager::SetCommunicationTimeout(
-    unsigned long ReadIntervalTimeout,
-    unsigned long ReadTotalTimeoutMultiplier,
-    unsigned long ReadTotalTimeoutConstant,
-    unsigned long WriteTotalTimeoutMultiplier,
-    unsigned long WriteTotalTimeoutConstant) {
-    COMMTIMEOUTS timeout;
+    const uint32_t ReadIntervalTimeout,
+    const uint32_t ReadTotalTimeoutMultiplier,
+    const uint32_t ReadTotalTimeoutConstant,
+    const uint32_t WriteTotalTimeoutMultiplier,
+    const uint32_t WriteTotalTimeoutConstant) const {
 
-    timeout.ReadIntervalTimeout = MAXDWORD;
-    timeout.ReadTotalTimeoutConstant = 10;
-    timeout.ReadTotalTimeoutMultiplier = MAXDWORD;
-    timeout.WriteTotalTimeoutConstant = WriteTotalTimeoutConstant;
-    timeout.WriteTotalTimeoutMultiplier = WriteTotalTimeoutMultiplier;
+    COMMTIMEOUTS timeout = {
+        .ReadIntervalTimeout            = MAXDWORD,
+        .ReadTotalTimeoutMultiplier     = MAXDWORD,
+        .ReadTotalTimeoutConstant       = 10,
+        .WriteTotalTimeoutMultiplier    = WriteTotalTimeoutMultiplier,
+        .WriteTotalTimeoutConstant      = WriteTotalTimeoutConstant,
+    };
 
-    if (!SetCommTimeouts(m_hSerial, &timeout)) return false;
+    if (!SetCommTimeouts(m_hSerial, &timeout)) {
+        return false;
+    }
 
     return true;
 }
@@ -149,14 +159,7 @@ bool SerialCommunicationManager::Connect() {
     // Try to connect to the given port throuh CreateFile
     m_hSerial = CreateFileA(m_port.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
-    // Set the size of the buffers. 100 bytes holds 4 controller SteamVR packets, I guess it could be smaller if needed, but this is fine for now.
-    // if (!SetupComm(m_hSerial, 100, 300)) {
-    //     LogError("Failed to setup comm");
-    // 
-    //     return false;
-    // }
-
-    if (this->m_hSerial == INVALID_HANDLE_VALUE) {
+    if (m_hSerial == INVALID_HANDLE_VALUE) {
         LogError("Received error connecting to port");
         return false;
     }
@@ -170,18 +173,18 @@ bool SerialCommunicationManager::Connect() {
     }
 
     // Define serial connection parameters for the arduino board
-    dcbSerialParams.BaudRate = CBR_115200;
-    dcbSerialParams.ByteSize = 8;
-    dcbSerialParams.StopBits = ONESTOPBIT;
-    dcbSerialParams.Parity = NOPARITY;
+    dcbSerialParams.BaudRate        = CBR_115200;
+    dcbSerialParams.ByteSize        = 8;
+    dcbSerialParams.StopBits        = ONESTOPBIT;
+    dcbSerialParams.Parity          = NOPARITY;
 
     // reset upon establishing a connection
-    dcbSerialParams.fDtrControl = DTR_CONTROL_ENABLE;
-    dcbSerialParams.XonChar = 0x11;
-    dcbSerialParams.XoffLim = 0x4000;
-    dcbSerialParams.XoffChar = 0x13;
-    dcbSerialParams.EofChar = 0x1A;
-    dcbSerialParams.EvtChar = 0;
+    dcbSerialParams.fDtrControl     = DTR_CONTROL_ENABLE;
+    dcbSerialParams.XonChar         = 0x11;
+    dcbSerialParams.XoffLim         = 0x4000;
+    dcbSerialParams.XoffChar        = 0x13;
+    dcbSerialParams.EofChar         = 0x1A;
+    dcbSerialParams.EvtChar         = 0;
 
     // set the parameters and check for their proper application
     if (!SetCommState(m_hSerial, &dcbSerialParams)) {
@@ -194,12 +197,14 @@ bool SerialCommunicationManager::Connect() {
         return false;
     }
 
-    COMMTIMEOUTS timeout;
-    timeout.ReadIntervalTimeout = MAXDWORD;
-    timeout.ReadTotalTimeoutConstant = 10;
-    timeout.ReadTotalTimeoutMultiplier = MAXDWORD;
-    timeout.WriteTotalTimeoutConstant = 0;
-    timeout.WriteTotalTimeoutMultiplier = 5;
+    COMMTIMEOUTS timeout = {
+        .ReadIntervalTimeout            = MAXDWORD,
+        .ReadTotalTimeoutMultiplier     = MAXDWORD,
+        .ReadTotalTimeoutConstant       = 10,
+        .WriteTotalTimeoutMultiplier    = 5,
+        .WriteTotalTimeoutConstant      = 0,
+    };
+
     if (!SetCommTimeouts(m_hSerial, &timeout)) {
         LogError("Failed to set comm timeouts");
 
@@ -216,27 +221,25 @@ bool SerialCommunicationManager::Connect() {
 void SerialCommunicationManager::WaitAttemptConnection() {
     LogMessage("Attempting to connect to dongle");
     while (m_threadActive && !IsConnected() && !Connect()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(c_listenerWaitTime));
+        std::this_thread::sleep_for(std::chrono::milliseconds(LISTENER_WAIT_TIME));
     }
-    if (!m_threadActive) return;
-
-    // std::this_thread::sleep_for(std::chrono::milliseconds(c_listenerWaitTime));
-    // WriteCommand("BP+VS");
-    // UpdateDongleState(VRDongleState::connected);
+    if (!m_threadActive) {
+        return;
+    }
 }
 
 void SerialCommunicationManager::BeginListener(
-    const std::function<void(const ContactGloveDevice handedness, const GloveInputData_t&)> inputCallback,
-    const std::function<void(const ContactGloveDevice handedness, const GlovePacketFingers_t&)> fingersCallback,
+    const std::function<void(const ContactGloveDevice_t handedness, const GloveInputData_t&)> inputCallback,
+    const std::function<void(const ContactGloveDevice_t handedness, const GlovePacketFingers_t&)> fingersCallback,
     const std::function<void(const DevicesStatus_t&)> statusCallback,
     const std::function<void(const DevicesFirmware_t&)> firmwareCallback) {
+
+    m_fingersCallback   = fingersCallback;
+    m_inputCallback     = inputCallback;
+    m_statusCallback    = statusCallback;
+    m_firmwareCallback  = firmwareCallback;
+
     m_threadActive = true;
-
-    m_fingersCallback   = std::move(fingersCallback);
-    m_inputCallback     = std::move(inputCallback);
-    m_statusCallback    = std::move(statusCallback);
-    m_firmwareCallback  = std::move(firmwareCallback);
-
     m_serialThread = std::thread(&SerialCommunicationManager::ListenerThread, this);
 }
 
@@ -248,44 +251,33 @@ void SerialCommunicationManager::ListenerThread() {
     while (m_threadActive) {
         std::string receivedString;
 
-        if (!ReceiveNextPacket(receivedString)) {
-            LogMessage("Detected device error. Disconnecting device and attempting reconnection...");
-            // UpdateDongleState(VRDongleState::disconnected);
-
-            if (DisconnectFromDevice(false)) {
-                WaitAttemptConnection();
-                LogMessage("Successfully reconnected to device");
-                continue;
-            }
-
-            LogMessage("Could not disconnect from device. Closing listener...");
-            Disconnect();
-
-            return;
-        }
-
-        // If we haven't received anything don't bother with trying to decode anything
-        if (receivedString.empty()) {
-            goto finish;
-        }
-
         try {
-            // VRCommInputData_t commData = m_encodingManager->DecodeInputPacket(receivedString);
-            // if (!commData.isValid) {
-            //     LogMessage("Received Bad Packet.");
-            //     PurgeBuffer();
-            //     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            // 
-            //     continue;
-            // }
+            if (!ReceiveNextPacket(receivedString)) {
+                LogMessage("Detected device error. Disconnecting device and attempting reconnection...");
+                // UpdateDongleState(VRDongleState::disconnected);
 
-            // m_inputCallback(commData);
+                if (DisconnectFromDevice(false)) {
+                    WaitAttemptConnection();
+                    LogMessage("Successfully reconnected to device");
+                    continue;
+                }
+
+                LogMessage("Could not disconnect from device. Closing listener...");
+                Disconnect();
+
+                return;
+            }
         }
         catch (const std::invalid_argument& ia) {
             LogMessage((std::string("Received error from encoding: ") + ia.what()).c_str());
         }
         catch (...) {
             LogMessage("Received unknown error attempting to decode packet.");
+        }
+
+        // If we haven't received anything don't bother with trying to decode anything
+        if (receivedString.empty()) {
+            goto finish;
         }
 
     finish:
@@ -295,10 +287,10 @@ void SerialCommunicationManager::ListenerThread() {
 }
 
 bool SerialCommunicationManager::ReceiveNextPacket(std::string& buff) {
-    DWORD dwRead = 0;
+    DWORD dwRead    = 0;
 
-    char thisChar = 0x00;
-    char lastChar = 0x00;
+    char thisChar   = 0x00;
+    char lastChar   = 0x00;
 
     do {
         lastChar = thisChar;
@@ -309,7 +301,7 @@ bool SerialCommunicationManager::ReceiveNextPacket(std::string& buff) {
         }
 
         if (dwRead == 0) {
-            // printf("No packet received within timeout\n");
+            LogWarning("No packet received within timeout\n");
             break;
         }
 
@@ -331,22 +323,22 @@ bool SerialCommunicationManager::ReceiveNextPacket(std::string& buff) {
                     if (DecodePacket(pData, buff.size(), &packet)) {
                         switch (packet.type) {
                             // Invoke callback
-                        case PacketType::GloveLeftData:
-                            m_inputCallback(ContactGloveDevice::LeftGlove, packet.packet.gloveData);
+                        case PacketType_t::GloveLeftData:
+                            m_inputCallback(ContactGloveDevice_t::LeftGlove, packet.packet.gloveData);
                             break;
-                        case PacketType::GloveRightData:
-                            m_inputCallback(ContactGloveDevice::RightGlove, packet.packet.gloveData);
+                        case PacketType_t::GloveRightData:
+                            m_inputCallback(ContactGloveDevice_t::RightGlove, packet.packet.gloveData);
                             break;
-                        case PacketType::GloveLeftFingers:
-                            m_fingersCallback(ContactGloveDevice::LeftGlove, packet.packet.gloveFingers);
+                        case PacketType_t::GloveLeftFingers:
+                            m_fingersCallback(ContactGloveDevice_t::LeftGlove, packet.packet.gloveFingers);
                             break;
-                        case PacketType::GloveRightFingers:
-                            m_fingersCallback(ContactGloveDevice::RightGlove, packet.packet.gloveFingers);
+                        case PacketType_t::GloveRightFingers:
+                            m_fingersCallback(ContactGloveDevice_t::RightGlove, packet.packet.gloveFingers);
                             break;
-                        case PacketType::DevicesStatus:
+                        case PacketType_t::DevicesStatus:
                             m_statusCallback(packet.packet.status);
                             break;
-                        case PacketType::DevicesFirmware:
+                        case PacketType_t::DevicesFirmware:
                             m_firmwareCallback(packet.packet.firmware);
                             break;
                         }
@@ -390,9 +382,13 @@ void SerialCommunicationManager::WriteCommand(const std::string& command) {
 bool SerialCommunicationManager::WriteQueued() {
     std::scoped_lock lock(m_writeMutex);
 
-    if (!m_isConnected) return false;
+    if (!m_isConnected) {
+        return false;
+    }
 
-    if (m_queuedWrite.empty()) return true;
+    if (m_queuedWrite.empty()) {
+        return true;
+    }
 
     const char* buf = m_queuedWrite.c_str();
     DWORD bytesSend;
@@ -401,14 +397,14 @@ bool SerialCommunicationManager::WriteQueued() {
         return false;
     }
 
-    printf("Wrote: %\n", m_queuedWrite.c_str());
+    printf("Wrote: %s\n", m_queuedWrite.c_str());
 
     m_queuedWrite.clear();
 
     return true;
 }
 
-bool SerialCommunicationManager::PurgeBuffer() {
+bool SerialCommunicationManager::PurgeBuffer() const {
     return PurgeComm(m_hSerial, PURGE_RXCLEAR | PURGE_TXCLEAR);
 }
 
@@ -421,7 +417,9 @@ void SerialCommunicationManager::Disconnect() {
         printf("Serial joined\n");
     }
 
-    if (IsConnected()) DisconnectFromDevice(true);
+    if (IsConnected()) {
+        DisconnectFromDevice(true);
+    }
 
     printf("Serial finished disconnecting\n");
 }
@@ -445,21 +443,26 @@ bool SerialCommunicationManager::DisconnectFromDevice(bool writeDeactivate) {
     return true;
 };
 
-bool SerialCommunicationManager::IsConnected() {
+bool SerialCommunicationManager::IsConnected() const {
     return m_isConnected;
 };
 
-void SerialCommunicationManager::LogError(const char* message) {
+void SerialCommunicationManager::LogError(const char* message) const {
     // message with port name and last error
     printf("%s (%s) - Error: %s\n", message, m_port.c_str(), GetLastErrorAsString().c_str());
 }
 
-void SerialCommunicationManager::LogMessage(const char* message) {
+void SerialCommunicationManager::LogWarning(const char* message) const {
+    // message with port name
+    printf("%s (%s) - Warning: %s\n", message, m_port.c_str(), GetLastErrorAsString().c_str());
+}
+
+void SerialCommunicationManager::LogMessage(const char* message) const {
     // message with port name
     printf("%s (%s)\n", message, m_port.c_str());
 }
 
-bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket) {
+bool SerialCommunicationManager::DecodePacket(const uint8_t* pData, const size_t length, ContactGlovePacket_t* outPacket) const {
 
     bool decoded = false;
 
@@ -467,7 +470,7 @@ bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket
     case GLOVE_LEFT_PACKET_DATA:
     {
         // Assign type
-        outPacket->type = PacketType::GloveLeftData;
+        outPacket->type = PacketType_t::GloveLeftData;
 
         // Extract data
         outPacket->packet.gloveData.joystickX = ((uint16_t*)(pData))[1];
@@ -511,7 +514,7 @@ bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket
     case GLOVE_RIGHT_PACKET_DATA:
     {
         // Assign type
-        outPacket->type = PacketType::GloveRightData;
+        outPacket->type = PacketType_t::GloveRightData;
 
         // Extract data
         outPacket->packet.gloveData.joystickX = ((uint16_t*)(pData))[1];
@@ -554,7 +557,7 @@ bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket
     case DEVICES_VERSIONS:
     {
         // Assign type
-        outPacket->type = PacketType::DevicesFirmware;
+        outPacket->type = PacketType_t::DevicesFirmware;
 
         // data is 0x01 0x06 3 times
 
@@ -575,7 +578,7 @@ bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket
     case DEVICES_STATUS:
     {
         // Assign type
-        outPacket->type = PacketType::DevicesStatus;
+        outPacket->type = PacketType_t::DevicesStatus;
 
         // uint8_t dongle4[8] = { 0x00, 0x1E, 0x50, 0x5F, 0x5A, 0x60, 0x01, 0xA2 };
 
@@ -594,7 +597,7 @@ bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket
     case GLOVE_POWER_ON_PACKET:
     {
         // Assign type
-        outPacket->type = PacketType::GlovePowerOn;
+        outPacket->type = PacketType_t::GlovePowerOn;
 
         // PrintBuffer("glove_power_on", pData, length);
 
@@ -606,7 +609,7 @@ bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket
     case GLOVE_LEFT_PACKET_FINGERS:
     {
         // Assign type
-        outPacket->type = PacketType::GloveLeftFingers;
+        outPacket->type = PacketType_t::GloveLeftFingers;
         // Extract data
         outPacket->packet.gloveFingers.fingerThumbTip   = ((uint16_t*)(pData + 1))[9];
         outPacket->packet.gloveFingers.fingerThumbRoot  = ((uint16_t*)(pData + 1))[8];
@@ -643,7 +646,7 @@ bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket
         // @TODO: Imu data is not usable
 
         // Assign type
-        outPacket->type = PacketType::GloveLeftImu;
+        outPacket->type = PacketType_t::GloveLeftImu;
         // Extract data
         outPacket->packet.gloveImu.imu1 = ((uint16_t*)(pData + 1))[0];
         outPacket->packet.gloveImu.imu2 = ((uint16_t*)(pData + 1))[1];
@@ -651,8 +654,8 @@ bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket
         outPacket->packet.gloveImu.imu3 = ((uint16_t*)(pData + 1))[2];
         outPacket->packet.gloveImu.imu4 = ((uint16_t*)(pData + 1))[3];
 
-        outPacket->packet.gloveImu.imu5 = ((uint32_t*)(pData + 1))[4];
-        outPacket->packet.gloveImu.imu6 = ((uint32_t*)(pData + 1))[5];
+        outPacket->packet.gloveImu.imu5 = ((float*)(pData + 1))[4];
+        outPacket->packet.gloveImu.imu6 = ((float*)(pData + 1))[5];
 
         // printf(
         //     "imu[L]:: %d, %d, %d, %d [%.6f, %.6f]\n",
@@ -672,7 +675,7 @@ bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket
     case GLOVE_RIGHT_PACKET_FINGERS:
     {
         // Assign type
-        outPacket->type = PacketType::GloveRightFingers;
+        outPacket->type = PacketType_t::GloveRightFingers;
 
         // Extract data
         outPacket->packet.gloveFingers.fingerThumbTip   = ((uint16_t*)(pData + 1))[9];
@@ -710,7 +713,7 @@ bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket
         // @TODO: Imu data is not usable
 
         // Assign type
-        outPacket->type = PacketType::GloveRightImu;
+        outPacket->type = PacketType_t::GloveRightImu;
         // Extract data
         outPacket->packet.gloveImu.imu1 = ((uint16_t*)(pData + 1))[0];
         outPacket->packet.gloveImu.imu2 = ((uint16_t*)(pData + 1))[1];
@@ -718,8 +721,8 @@ bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket
         outPacket->packet.gloveImu.imu3 = ((uint16_t*)(pData + 1))[2];
         outPacket->packet.gloveImu.imu4 = ((uint16_t*)(pData + 1))[3];
 
-        outPacket->packet.gloveImu.imu5 = ((uint32_t*)(pData + 1))[0];
-        outPacket->packet.gloveImu.imu6 = ((uint32_t*)(pData + 1))[1];
+        outPacket->packet.gloveImu.imu5 = ((float*)(pData + 1))[0];
+        outPacket->packet.gloveImu.imu6 = ((float*)(pData + 1))[1];
 
         // printf(
         //     "imu[R]:: %d, %d, %d, %d [%.6f, %.6f]\n",
@@ -738,6 +741,7 @@ bool DecodePacket(uint8_t* pData, size_t length, ContactGlovePacket_t* outPacket
     break;
 
     default:
+        // @FIXME: Use proper logging library
         printf("[WARN] Got unknown packet with command code 0x%02hX!!\n", pData[1]);
         PrintBuffer("unknown_packet", pData, length);
         break;

@@ -12,7 +12,7 @@ namespace ImGui
 	void EndGroupPanel();
 	ImVec2 GetCursorPosAbsolute();
 
-	void ProgressBarPositiveNegative(float fraction, ImVec4 positive, ImVec4 negative, const ImVec2& size_arg, const char* overlay);
+	void ProgressBarPositiveNegative(float fraction, const ImVec4 positive, const ImVec4 negative, const ImVec2& size_arg, const char* overlay);
 
 	bool InputDouble3(const char* label, double v[3], const char* format, ImGuiInputTextFlags flags = 0);
 

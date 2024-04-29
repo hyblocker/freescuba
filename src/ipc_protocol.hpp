@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #define FREESCUBA_PIPE_NAME "\\\\.\\pipe\\FreeScubaDriver"
-#define CONTACT_GLOVE_INVALID_DEVICE_ID (0xFFFFFFFF)
+constexpr uint32_t CONTACT_GLOVE_INVALID_DEVICE_ID = 0xFFFFFFFF;
 
 #ifndef _OPENVR_DRIVER_API
 #include <openvr.h>
@@ -81,7 +81,7 @@ namespace vr {
 namespace protocol {
 	const uint32_t Version = 1;
 
-	enum RequestType
+	enum RequestType_t
 	{
 		RequestInvalid,
 		RequestHandshake,
@@ -91,7 +91,7 @@ namespace protocol {
 		RequestDevicePose,
 	};
 
-	enum ResponseType
+	enum ResponseType_t
 	{
 		ResponseInvalid,
 		ResponseHandshake,
@@ -99,20 +99,20 @@ namespace protocol {
 		ResponseDevicePose,
 	};
 
-	enum GloveDevice {
+	enum GloveDevice_t {
 		LeftGlove,
 		RightGlove,
 		Dongle,
 	};
 
-	struct Protocol
+	struct Protocol_t
 	{
 		uint32_t version = Version;
 	};
 
-	#define GLOVE_BATTERY_INVALID 0xFF
+	constexpr uint8_t GLOVE_BATTERY_INVALID = 0xFF;
 
-	struct ContactGloveState {
+	struct ContactGloveState_t {
 
 		bool isConnected = false;
 		bool ignorePose = false;
@@ -162,27 +162,27 @@ namespace protocol {
 		uint8_t firmwareMinor;
 
 		// Calibration for a single joint on the fingers
-		struct FingerJointCalibrationData {
+		struct FingerJointCalibrationData_t {
 			uint16_t rest;	// Rest pose
 			uint16_t bend;	// Bend pose (fingers bent away from the palm, backwards)
 			uint16_t close; // Close pose (fingers bent towards the palm)
 		};
 		// Joint collection forming an entire hand
-		struct FingerCalibrationData {
-			FingerJointCalibrationData thumbRoot;
-			FingerJointCalibrationData thumbTip;
-			FingerJointCalibrationData indexRoot;
-			FingerJointCalibrationData indexTip;
-			FingerJointCalibrationData middleRoot;
-			FingerJointCalibrationData middleTip;
-			FingerJointCalibrationData ringRoot;
-			FingerJointCalibrationData ringTip;
-			FingerJointCalibrationData pinkyRoot;
-			FingerJointCalibrationData pinkyTip;
+		struct FingerCalibrationData_t {
+			FingerJointCalibrationData_t thumbRoot;
+			FingerJointCalibrationData_t thumbTip;
+			FingerJointCalibrationData_t indexRoot;
+			FingerJointCalibrationData_t indexTip;
+			FingerJointCalibrationData_t middleRoot;
+			FingerJointCalibrationData_t middleTip;
+			FingerJointCalibrationData_t ringRoot;
+			FingerJointCalibrationData_t ringTip;
+			FingerJointCalibrationData_t pinkyRoot;
+			FingerJointCalibrationData_t pinkyTip;
 		};
 
-		struct CalibrationData {
-			struct JoystickCalibration {
+		struct CalibrationData_t {
+			struct JoystickCalibration_t {
 				float threshold;
 				// Bounds for joystick
 				uint16_t XMax;
@@ -194,53 +194,53 @@ namespace protocol {
 				float forwardAngle;
 			} joystick;
 
-			struct PoseOffset {
+			struct PoseOffset_t {
 				vr::HmdVector3d_t pos;
 				vr::HmdQuaternion_t rot;
 			} poseOffset;
 
-			FingerCalibrationData fingers;
+			FingerCalibrationData_t fingers;
 
-			struct GestureThreshold {
+			struct GestureThreshold_t {
 				float activate;
 				float deactivate;
 			};
 
-			struct GestureCalibration {
-				GestureThreshold thumb;
-				GestureThreshold trigger;
-				GestureThreshold grip;
+			struct GestureCalibration_t {
+				GestureThreshold_t thumb;
+				GestureThreshold_t trigger;
+				GestureThreshold_t grip;
 			} gestures;
 			
 		} calibration;
 	};
 
-	struct Request
+	struct Request_t
 	{
-		RequestType type;
+		RequestType_t type;
 
 		union {
-			ContactGloveState gloveData;
+			ContactGloveState_t gloveData;
 			uint32_t driverPoseIndex;
 		};
 
-		Request()											: type(RequestType::RequestInvalid), gloveData{} { }
-		Request(RequestType type)							: type(type), gloveData{} { }
-		Request(ContactGloveState params, bool leftHand)	: type(leftHand ? RequestType::RequestUpdateGloveLeftState : RequestType::RequestUpdateGloveRightState),	gloveData(params) {}
-		Request(uint32_t driverPoseIndex)					: type(RequestType::RequestDevicePose),	driverPoseIndex(driverPoseIndex) {}
+		Request_t()												: type(RequestType_t::RequestInvalid), gloveData{} { }
+		Request_t(RequestType_t type)							: type(type), gloveData{} { }
+		Request_t(ContactGloveState_t params, bool leftHand)	: type(leftHand ? RequestType_t::RequestUpdateGloveLeftState : RequestType_t::RequestUpdateGloveRightState), gloveData(params) {}
+		Request_t(uint32_t driverPoseIndex)						: type(RequestType_t::RequestDevicePose),	driverPoseIndex(driverPoseIndex) {}
 	};
 
-	struct Response
+	struct Response_t
 	{
-		ResponseType type;
+		ResponseType_t type;
 
 		union {
-			Protocol protocol;
+			Protocol_t protocol;
 			vr::DriverPose_t driverPose;
 		};
 
-		Response() : type(ResponseType::ResponseInvalid), protocol{} { }
-		Response(ResponseType type) : type(type), protocol{} { }
-		Response(vr::DriverPose_t pose) : type(ResponseType::ResponseDevicePose), driverPose(pose){ }
+		Response_t()											: type(ResponseType_t::ResponseInvalid), protocol{} { }
+		Response_t(ResponseType_t type)							: type(type), protocol{} { }
+		Response_t(vr::DriverPose_t pose)						: type(ResponseType_t::ResponseDevicePose), driverPose(pose){ }
 	};
 }

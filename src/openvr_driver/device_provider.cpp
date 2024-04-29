@@ -40,7 +40,7 @@ void DeviceProvider::LeaveStandby() {
 
 }
 
-void DeviceProvider::HandleGloveUpdate(protocol::ContactGloveState updateState, bool isLeft) {
+void DeviceProvider::HandleGloveUpdate(protocol::ContactGloveState_t updateState, bool isLeft) {
     if (isLeft) {
         m_leftGlove.Update(updateState);
     } else {

@@ -5,7 +5,7 @@
 #include "configuration.hpp"
 
 void ForwardDataToDriver(AppState& state, IPCClient& ipcClient);
-void ProcessGlove(protocol::ContactGloveState& glove, MostCommonElementRingBuffer& batteryRingBuffer, std::chrono::steady_clock::time_point gloveConnected);
+void ProcessGlove(protocol::ContactGloveState_t& glove, MostCommonElementRingBuffer& batteryRingBuffer, std::chrono::steady_clock::time_point gloveConnected);
 void UpdateGloveInputState(AppState& state);
 
 // Tell the GPU drivers to give the overlay priority over other apps, it's a driver after all
@@ -76,14 +76,15 @@ void ActivateMultipleDrivers()
     }
 }
 
+// @TODO: Return an enum instead of throwing an exception
 void InitVR()
 {
-    auto initError = vr::VRInitError_None;
+    vr::EVRInitError initError = vr::VRInitError_None;
     vr::VR_Init(&initError, vr::VRApplication_Other);
     if (initError != vr::VRInitError_None)
     {
-        auto error = vr::VR_GetVRInitErrorAsEnglishDescription(initError);
-        throw std::runtime_error("OpenVR error:" + std::string(error));
+        const char* error = vr::VR_GetVRInitErrorAsEnglishDescription(initError);
+        throw std::runtime_error("OpenVR error:" + std::string( error ));
     }
 
     if (!vr::VR_IsInterfaceVersionValid(vr::IVRSystem_Version))
@@ -102,6 +103,7 @@ void InitVR()
     ActivateMultipleDrivers();
 }
 
+// @FIXME: Return a status enum
 void TryCreateVrOverlay(AppState& state) {
     if (s_overlayMainHandle || !vr::VROverlay()) {
         return;
@@ -161,12 +163,10 @@ int main() {
 
         // Serial data listener
         man.BeginListener(
-            [&](const ContactGloveDevice handedness, const GloveInputData_t& inputData) {
-                // gloveLeftConnected = std::chrono::high_resolution_clock::now();
-                // gloveRightConnected = std::chrono::high_resolution_clock::now();
+            [&](const ContactGloveDevice_t handedness, const GloveInputData_t& inputData) {
 
                 switch (handedness) {
-                    case ContactGloveDevice::LeftGlove:
+                    case ContactGloveDevice_t::LeftGlove:
                         state.gloveLeft.hasMagnetra         = inputData.hasMagnetra;
                         state.gloveLeft.systemUp            = inputData.systemUp;
                         state.gloveLeft.systemDown          = inputData.systemDown;
@@ -176,7 +176,7 @@ int main() {
                         state.gloveLeft.joystickXRaw        = inputData.joystickX;
                         state.gloveLeft.joystickYRaw        = inputData.joystickY;
                         break;
-                    case ContactGloveDevice::RightGlove:
+                    case ContactGloveDevice_t::RightGlove:
                         state.gloveRight.hasMagnetra        = inputData.hasMagnetra;
                         state.gloveRight.systemUp           = inputData.systemUp;
                         state.gloveRight.systemDown         = inputData.systemDown;
@@ -189,9 +189,9 @@ int main() {
                 }
             },
 
-            [&](const ContactGloveDevice handedness, const GlovePacketFingers_t& fingerData) {
+            [&](const ContactGloveDevice_t handedness, const GlovePacketFingers_t& fingerData) {
                 switch (handedness) {
-                    case ContactGloveDevice::LeftGlove:
+                    case ContactGloveDevice_t::LeftGlove:
                         gloveLeftConnected = std::chrono::high_resolution_clock::now();
                         state.gloveLeft.isConnected         = true;
                         state.gloveLeft.thumbRootRaw        = fingerData.fingerThumbRoot;
@@ -205,7 +205,7 @@ int main() {
                         state.gloveLeft.pinkyRootRaw        = fingerData.fingerPinkyRoot;
                         state.gloveLeft.pinkyTipRaw         = fingerData.fingerPinkyTip;
                         break;
-                    case ContactGloveDevice::RightGlove:
+                    case ContactGloveDevice_t::RightGlove:
                         gloveRightConnected = std::chrono::high_resolution_clock::now();
                         state.gloveRight.isConnected        = true;
                         state.gloveRight.thumbRootRaw       = fingerData.fingerThumbRoot;
@@ -280,7 +280,7 @@ int main() {
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define CLAMP(t,a,b) (MAX(MIN(t, b), a))
 
-void ProcessGlove(protocol::ContactGloveState& glove, MostCommonElementRingBuffer& batteryRingBuffer, std::chrono::steady_clock::time_point gloveConnected) {
+void ProcessGlove(protocol::ContactGloveState_t& glove, MostCommonElementRingBuffer& batteryRingBuffer, std::chrono::steady_clock::time_point gloveConnected) {
 
     // Compute whether we should consider the glove as connected or not
     auto delta = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - gloveConnected);
@@ -424,7 +424,7 @@ static char deviceRole[vr::k_unMaxPropertyStringSize];
 
 void ForwardDataToDriver(AppState& state, IPCClient& ipcClient) {
 
-    protocol::Request req = {};
+    protocol::Request_t req = {};
 
     uint32_t trackerIdLeft  = CONTACT_GLOVE_INVALID_DEVICE_ID;
     uint32_t trackerIdRight = CONTACT_GLOVE_INVALID_DEVICE_ID;
@@ -476,24 +476,24 @@ void ForwardDataToDriver(AppState& state, IPCClient& ipcClient) {
 
     if (state.gloveLeft.isConnected == true) {
         state.gloveLeft.trackerIndex = trackerIdLeft;
-        req.type = protocol::RequestType::RequestUpdateGloveLeftState;
-        memcpy(&req.gloveData, &state.gloveLeft, sizeof(protocol::ContactGloveState));
+        req.type = protocol::RequestType_t::RequestUpdateGloveLeftState;
+        memcpy(&req.gloveData, &state.gloveLeft, sizeof(protocol::ContactGloveState_t));
         // Adjust angle
         ipcClient.SendBlocking(req);
     } else {
-        req.type = protocol::RequestType::RequestUpdateGloveLeftState;
+        req.type = protocol::RequestType_t::RequestUpdateGloveLeftState;
         req.gloveData.isConnected = false;
         ipcClient.SendBlocking(req);
     }
 
     if (state.gloveRight.isConnected == true) {
         state.gloveRight.trackerIndex = trackerIdRight;
-        req.type = protocol::RequestType::RequestUpdateGloveRightState;
-        memcpy(&req.gloveData, &state.gloveRight, sizeof(protocol::ContactGloveState));
+        req.type = protocol::RequestType_t::RequestUpdateGloveRightState;
+        memcpy(&req.gloveData, &state.gloveRight, sizeof(protocol::ContactGloveState_t));
         // Adjust angle
         ipcClient.SendBlocking(req);
     } else {
-        req.type = protocol::RequestType::RequestUpdateGloveRightState;
+        req.type = protocol::RequestType_t::RequestUpdateGloveRightState;
         req.gloveData.isConnected = false;
         ipcClient.SendBlocking(req);
     }

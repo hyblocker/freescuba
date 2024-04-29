@@ -27,33 +27,31 @@ Received data (CRC: 0x0):: uint8_t unknown_packet[7] = { 0x00, 0x64, 0x01, 0x10,
 */
 
 // 254 is the maximum size of a COBS frame
-#define MAX_PACKET_SIZE 254
+constexpr uint8_t MAX_PACKET_SIZE							= 254;
 
-#define MAKE_PACKET_ID(name, hex) constexpr uint8_t name = hex
+constexpr uint8_t DEVICES_VERSIONS							= 0x07;
+constexpr uint8_t DEVICES_STATUS							= 0x1E;
+constexpr uint8_t GLOVE_POWER_ON_PACKET						= 0x64;
 
-MAKE_PACKET_ID(DEVICES_VERSIONS, 0x07); // 
-MAKE_PACKET_ID(DEVICES_STATUS, 0x1E); // idfk
-MAKE_PACKET_ID(GLOVE_POWER_ON_PACKET, 0x64); // idfk
+constexpr uint8_t GLOVE_RIGHT_PACKET_DATA					= 0x02; // 8  bytes
+constexpr uint8_t GLOVE_RIGHT_PACKET_FINGERS				= 0x05; // 23 bytes
+constexpr uint8_t GLOVE_RIGHT_PACKET_IMU					= 0x0B; // 11 bytes
 
-MAKE_PACKET_ID(GLOVE_RIGHT_PACKET_DATA, 0x02); // 8  bytes
-MAKE_PACKET_ID(GLOVE_RIGHT_PACKET_FINGERS, 0x05); // 23 bytes
-MAKE_PACKET_ID(GLOVE_RIGHT_PACKET_IMU, 0x0B); // 11 bytes
+constexpr uint8_t GLOVE_LEFT_PACKET_DATA					= 0x01; // 8  bytes
+constexpr uint8_t GLOVE_LEFT_PACKET_FINGERS					= 0x04; // 23 bytes
+constexpr uint8_t GLOVE_LEFT_PACKET_IMU						= 0x0A; // 11 bytes
 
-MAKE_PACKET_ID(GLOVE_LEFT_PACKET_DATA, 0x01); // 8  bytes
-MAKE_PACKET_ID(GLOVE_LEFT_PACKET_FINGERS, 0x04); // 23 bytes
-MAKE_PACKET_ID(GLOVE_LEFT_PACKET_IMU, 0x0A); // 11 bytes
+constexpr uint8_t CONTACT_GLOVE_INPUT_MASK_SYSTEM_UP		= 0b00010000;
+constexpr uint8_t CONTACT_GLOVE_INPUT_MASK_SYSTEM_DOWN		= 0b00001000;
+constexpr uint8_t CONTACT_GLOVE_INPUT_MASK_BUTTON_UP		= 0b00000010;
+constexpr uint8_t CONTACT_GLOVE_INPUT_MASK_BUTTON_DOWN		= 0b00000001;
+constexpr uint8_t CONTACT_GLOVE_INPUT_MASK_JOYSTICK_CLICK	= 0b00000100;
+constexpr uint8_t CONTACT_GLOVE_INPUT_MASK_MAGNETRA_PRESENT	= 0b00100000;
 
-#define CONTACT_GLOVE_INPUT_MASK_SYSTEM_UP			(0b00010000)
-#define CONTACT_GLOVE_INPUT_MASK_SYSTEM_DOWN		(0b00001000)
-#define CONTACT_GLOVE_INPUT_MASK_BUTTON_UP			(0b00000010)
-#define CONTACT_GLOVE_INPUT_MASK_BUTTON_DOWN		(0b00000001)
-#define CONTACT_GLOVE_INPUT_MASK_JOYSTICK_CLICK		(0b00000100)
-#define CONTACT_GLOVE_INPUT_MASK_MAGNETRA_PRESENT	(0b00100000)
+constexpr uint8_t CONTACT_GLOVE_INVALID_BATTERY				= 0xFF;
+constexpr uint32_t GLOVE_BATTERY_THRESHOLD					= 5;
 
-#define CONTACT_GLOVE_INVALID_BATTERY				(0xFF)
-#define GLOVE_BATTERY_THRESHOLD						(5)
-
-enum class ContactGloveDevice {
+enum class ContactGloveDevice_t {
 	LeftGlove,
 	RightGlove,
 	Dongle,
@@ -111,7 +109,7 @@ public:
 	float imu6;
 };
 
-enum class PacketType {
+enum class PacketType_t {
 	DevicesFirmware,
 	DevicesStatus,
 	GlovePowerOn,
@@ -128,7 +126,7 @@ enum class PacketType {
 // Common packet denominator
 struct ContactGlovePacket_t {
 public:
-	PacketType type;
+	PacketType_t type;
 	union ContactGlovePacket {
 		GloveInputData_t		gloveData;
 		GlovePacketFingers_t	gloveFingers;

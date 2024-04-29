@@ -4,7 +4,6 @@
 #include "../ipc_protocol.hpp"
 
 #define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
 #include <windows.h>
 
 class IPCClient {
@@ -12,10 +11,10 @@ public:
 	~IPCClient();
 
 	void Connect();
-	protocol::Response SendBlocking(const protocol::Request& request);
+	protocol::Response_t SendBlocking(const protocol::Request_t& request) const;
 
-	void Send(const protocol::Request& request);
-	protocol::Response Receive();
+	void Send(const protocol::Request_t& request) const;
+	protocol::Response_t Receive() const;
 
 private:
 	HANDLE pipe = INVALID_HANDLE_VALUE;
