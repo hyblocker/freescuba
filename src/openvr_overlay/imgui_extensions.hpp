@@ -21,4 +21,6 @@ namespace ImGui
 	bool InputDouble3(const char* label, double v[3], const char* format, ImGuiInputTextFlags flags = 0);
 
 	void DrawVectorElement(std::string id, const char* text, double* value, double delta = 0.01);
+
+	void SliderFloatStyled(const char* label, float* v, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
 }

@@ -8,6 +8,7 @@ static ImVector<ImRect> s_GroupPanelLabelStack;
 
 void ImGui::BeginGroupPanel(const char* name, const ImVec2& size)
 {
+    ImGui::PushFont(fontBold);
     ImGui::BeginGroup();
 
     auto cursorPos = ImGui::GetCursorScreenPos();
@@ -52,6 +53,7 @@ void ImGui::BeginGroupPanel(const char* name, const ImVec2& size)
 
     auto itemWidth = ImGui::CalcItemWidth();
     ImGui::PushItemWidth(ImMax(0.0f, itemWidth - frameHeight));
+    ImGui::PopFont();
 
     s_GroupPanelLabelStack.push_back(ImRect(labelMin, labelMax));
 }
@@ -204,4 +206,12 @@ void ImGui::DrawVectorElement(std::string id, const char* text, double* value, d
     if (ImGui::ArrowButton((id + text + "_increase").c_str(), ImGuiDir_Up)) {
         *value += delta;
     }
+}
+
+void ImGui::SliderFloatStyled(const char* label, float* v, float v_min, float v_max, const char* format, ImGuiSliderFlags flags) {
+    ImGui::PushFont(fontBold);
+    ImGui::Text(label);
+    ImGui::PopFont();
+    ImGui::SameLine();
+    ImGui::SliderFloat((std::string("##") + label).c_str(), v, v_min, v_max, format, flags);
 }

@@ -12,6 +12,10 @@ ImFont* fontBold    = nullptr;
 ImFont* fontLight   = nullptr;
 ImFont* fontRegular = nullptr;
 
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#define CLAMP(t,a,b) (MAX(MIN(t, b), a))
+
 void SetupImgui() {
     ImGuiStyle& style = ImGui::GetStyle();
 
@@ -57,7 +61,11 @@ void DrawJoystickInput(const float valueX, const float valueY, const float deadz
 
 void DrawGlove(const std::string name, const std::string id, protocol::ContactGloveState_t& glove, AppState& state) {
 
-    ImGui::BeginGroupPanel(name.c_str());
+    std::string panelTitle = name;
+    if (glove.isConnected) {
+        panelTitle = name + " (" + std::to_string(CLAMP(glove.gloveBattery, 0, 100)) + "%)";
+    }
+    ImGui::BeginGroupPanel(panelTitle.c_str());
     {
         if (!glove.isConnected) {
             ImGui::TextDisabled("Glove not connected...");
@@ -71,7 +79,11 @@ void DrawGlove(const std::string name, const std::string id, protocol::ContactGl
                 if (!glove.hasMagnetra) {
                     ImGui::TextDisabled("Magnetra is not available... Inputs unavailable.");
                 } else {
-                    ImGui::Text("Joystick: (%.4f, %.4f)", glove.joystickX, glove.joystickY);
+                    ImGui::PushFont(fontBold);
+                    ImGui::Text("Joystick");
+                    ImGui::PopFont();
+                    ImGui::SameLine();
+                    ImGui::Text(": (%.4f, %.4f)", glove.joystickX, glove.joystickY);
                     ImGui::Spacing();
                     DrawJoystickInput(glove.joystickXUnfiltered, glove.joystickYUnfiltered, glove.calibration.joystick.threshold);
 
@@ -87,7 +99,10 @@ void DrawGlove(const std::string name, const std::string id, protocol::ContactGl
                     ImGui::Spacing();
                     ImGui::Spacing();
 
+                    ImGui::PushFont(fontBold);
                     ImGui::Text("Buttons");
+                    ImGui::PopFont();
+
                     float columnWidth = ImGui::CalcItemWidth() / 5.0f;
                     ImGui::PushID((id + "_buttons_container").c_str());
                     ImGui::Columns(5);
@@ -137,50 +152,76 @@ void DrawGlove(const std::string name, const std::string id, protocol::ContactGl
             {
                 ImGui::Spacing();
                 ImGui::Spacing();
-                if (ImGui::BeginTable((id + "_fingers_table").c_str(), 3))
+                if (ImGui::BeginTable((id + "_fingers_table").c_str(), 4, ImGuiTableFlags_SizingFixedFit))
                 {
+                    float windowWidth = ImGui::GetWindowWidth();
+                    ImGui::TableSetupColumn(nullptr, ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, 0.0f);
+                    ImGui::TableSetupColumn(nullptr, ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, 0.0f);
+                    float widthBars = (windowWidth - ImGui::GetColumnWidth(0) - ImGui::GetColumnWidth(1)) * 0.5f;
+                    ImGui::TableSetupColumn(nullptr, ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoResize, widthBars);
+                    ImGui::TableSetupColumn(nullptr, ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoResize, widthBars);
 
 // #define DRAW_FINGER_BEND_VALUE(fingerValue) \
 //                     ImGui::ProgressBarPositiveNegative(fingerValue, FINGER_CURL_COLOUR, FINGER_REVERSE_CURL_COLOUR, ImVec2(-FLT_MIN, 0), "%.4f");
 
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
-                    ImGui::Text("Thumb (%.4f, %.4f)", glove.thumbRoot, glove.thumbTip);
+                    ImGui::PushFont(fontBold);
+                    ImGui::Text("Thumb");
+                    ImGui::PopFont();
                     ImGui::TableSetColumnIndex(1);
-                    DRAW_FINGER_BEND_VALUE(glove.thumbRoot);
+                    ImGui::Text("(%.4f, %.4f)", glove.thumbRoot, glove.thumbTip);
                     ImGui::TableSetColumnIndex(2);
+                    DRAW_FINGER_BEND_VALUE(glove.thumbRoot);
+                    ImGui::TableSetColumnIndex(3);
                     DRAW_FINGER_BEND_VALUE(glove.thumbTip);
 
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
-                    ImGui::Text("Index finger (%.4f, %.4f)", glove.indexRoot, glove.indexTip);
+                    ImGui::PushFont(fontBold);
+                    ImGui::Text("Index finger");
+                    ImGui::PopFont();
                     ImGui::TableSetColumnIndex(1);
-                    DRAW_FINGER_BEND_VALUE(glove.indexRoot);
+                    ImGui::Text("(%.4f, %.4f)", glove.indexRoot, glove.indexTip);
                     ImGui::TableSetColumnIndex(2);
+                    DRAW_FINGER_BEND_VALUE(glove.indexRoot);
+                    ImGui::TableSetColumnIndex(3);
                     DRAW_FINGER_BEND_VALUE(glove.indexTip);
 
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
-                    ImGui::Text("Middle finger (%.4f, %.4f)", glove.middleRoot, glove.middleTip);
+                    ImGui::PushFont(fontBold);
+                    ImGui::Text("Middle finger");
+                    ImGui::PopFont();
                     ImGui::TableSetColumnIndex(1);
-                    DRAW_FINGER_BEND_VALUE(glove.middleRoot);
+                    ImGui::Text("(%.4f, %.4f)", glove.middleRoot, glove.middleTip);
                     ImGui::TableSetColumnIndex(2);
+                    DRAW_FINGER_BEND_VALUE(glove.middleRoot);
+                    ImGui::TableSetColumnIndex(3);
                     DRAW_FINGER_BEND_VALUE(glove.middleTip);
 
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
-                    ImGui::Text("Ring finger (%.4f, %.4f)", glove.ringRoot, glove.ringTip);
+                    ImGui::PushFont(fontBold);
+                    ImGui::Text("Ring finger");
+                    ImGui::PopFont();
                     ImGui::TableSetColumnIndex(1);
-                    DRAW_FINGER_BEND_VALUE(glove.ringRoot);
+                    ImGui::Text("(%.4f, %.4f)", glove.ringRoot, glove.ringTip);
                     ImGui::TableSetColumnIndex(2);
+                    DRAW_FINGER_BEND_VALUE(glove.ringRoot);
+                    ImGui::TableSetColumnIndex(3);
                     DRAW_FINGER_BEND_VALUE(glove.ringTip);
 
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
-                    ImGui::Text("Pinky finger (%.4f, %.4f)", glove.pinkyRoot, glove.pinkyTip);
+                    ImGui::PushFont(fontBold);
+                    ImGui::Text("Pinky finger");
+                    ImGui::PopFont();
                     ImGui::TableSetColumnIndex(1);
-                    DRAW_FINGER_BEND_VALUE(glove.pinkyRoot);
+                    ImGui::Text("(%.4f, %.4f)", glove.pinkyRoot, glove.pinkyTip);
                     ImGui::TableSetColumnIndex(2);
+                    DRAW_FINGER_BEND_VALUE(glove.pinkyRoot);
+                    ImGui::TableSetColumnIndex(3);
                     DRAW_FINGER_BEND_VALUE(glove.pinkyTip);
 
                     ImGui::EndTable();
@@ -206,14 +247,40 @@ void DrawGlove(const std::string name, const std::string id, protocol::ContactGl
                     ImGui::Spacing();
                     ImGui::Spacing();
 
-                    ImGui::SliderFloat("Thumb Activate", &glove.calibration.gestures.thumb.activate, 0, 1);
-                    ImGui::SliderFloat("Thumb Deactivate", &glove.calibration.gestures.thumb.deactivate, 0, 1);
+                    if (ImGui::BeginTable((id + "_fingers_slider_group").c_str(), 3, ImGuiTableFlags_SizingFixedFit)) {
+                        ImGui::TableSetupColumn(nullptr, ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, 0.0f);   
+                        ImGui::TableSetupColumn(nullptr, ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoResize, 0.0f);
 
-                    ImGui::SliderFloat("Trigger Activate", &glove.calibration.gestures.trigger.activate, 0, 1);
-                    ImGui::SliderFloat("Trigger Deactivate", &glove.calibration.gestures.trigger.deactivate, 0, 1);
+                        ImGui::TableNextRow();
+                        DRAW_ALIGNED_SLIDER_FLOAT("Thumb Activate", &glove.calibration.gestures.thumb.activate, 0, 1);
+                        ImGui::TableNextRow();
+                        DRAW_ALIGNED_SLIDER_FLOAT("Thumb Deactivate", &glove.calibration.gestures.thumb.deactivate, 0, 1);
+                        ImGui::TableNextRow();
 
-                    ImGui::SliderFloat("Grip Activate", &glove.calibration.gestures.grip.activate, 0, 1);
-                    ImGui::SliderFloat("Grip Deactivate", &glove.calibration.gestures.grip.deactivate, 0, 1);
+                        DRAW_ALIGNED_SLIDER_FLOAT("Trigger Activate", &glove.calibration.gestures.trigger.activate, 0, 1);
+                        ImGui::TableNextRow();
+                        DRAW_ALIGNED_SLIDER_FLOAT("Trigger Deactivate", &glove.calibration.gestures.trigger.deactivate, 0, 1);
+                        ImGui::TableNextRow();
+
+                        DRAW_ALIGNED_SLIDER_FLOAT("Grip Activate", &glove.calibration.gestures.grip.activate, 0, 1);
+                        ImGui::TableNextRow();
+                        DRAW_ALIGNED_SLIDER_FLOAT("Grip Deactivate", &glove.calibration.gestures.grip.deactivate, 0, 1);
+
+                        ImGui::EndTable();
+                    }
+                    // ImGui::PushFont(fontBold);
+                    // ImGui::Text("Thumb Activate");
+                    // ImGui::PopFont();
+                    // ImGui::SameLine();
+                    // ImGui::SliderFloat("##Thumb Activate", &glove.calibration.gestures.thumb.activate, 0, 1);
+
+                    // ImGui::SliderFloatStyled("Thumb Deactivate", &glove.calibration.gestures.thumb.deactivate, 0, 1);
+                    // 
+                    // ImGui::SliderFloat("Trigger Activate", &glove.calibration.gestures.trigger.activate, 0, 1);
+                    // ImGui::SliderFloat("Trigger Deactivate", &glove.calibration.gestures.trigger.deactivate, 0, 1);
+                    // 
+                    // ImGui::SliderFloat("Grip Activate", &glove.calibration.gestures.grip.activate, 0, 1);
+                    // ImGui::SliderFloat("Grip Deactivate", &glove.calibration.gestures.grip.deactivate, 0, 1);
 
                     ImGui::Spacing();
                 }
@@ -223,7 +290,9 @@ void DrawGlove(const std::string name, const std::string id, protocol::ContactGl
             ImGui::EndGroupPanel();
             ImGui::PopID();
 
+            ImGui::PushFont(fontBold);
             ImGui::Text("Misc");
+            ImGui::PopFont();
             ImGui::Spacing();
             ImGui::Spacing();
             ImGui::TextDisabled("Battery: ");
@@ -260,7 +329,9 @@ void DrawGlove(const std::string name, const std::string id, protocol::ContactGl
                 ImGui::EndDisabled();
 
                 ImGui::Spacing();
+                ImGui::PushFont(fontBold);
                 ImGui::Text("Position Offset");
+                ImGui::PopFont();
                 ImGui::Spacing();
 
                 ImGui::DrawVectorElement(id + "_tracker_position_offset", "X", &glove.calibration.poseOffset.pos.v[0]);
@@ -274,10 +345,6 @@ void DrawGlove(const std::string name, const std::string id, protocol::ContactGl
     }
     ImGui::EndGroupPanel();
 }
-
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
-#define CLAMP(t,a,b) (MAX(MIN(t, b), a))
 
 void DrawCalibrateJoystick(AppState& state) {
     ImGui::BeginGroupPanel("Joystick Calibration");
@@ -712,7 +779,7 @@ void DrawUi(const bool isOverlay, AppState& state) {
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(io.DisplaySize, ImGuiCond_Always);
 
-    ImGui::Begin("FreeScuba - Open source contact gloves driver");
+    ImGui::Begin("FreeScuba - Open source contact gloves driver", 0, ImGuiWindowFlags_NoTitleBar);
 
     switch (state.uiState.page) {
         case ScreenState_t::ScreenStateViewData: {
