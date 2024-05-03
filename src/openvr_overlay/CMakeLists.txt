@@ -66,7 +66,8 @@ target_include_directories(FreeScubaOverlay
 	PUBLIC ${CMAKE_SOURCE_DIR}/vendor
 	PUBLIC ${CMAKE_SOURCE_DIR}/vendor/openvr/headers
 	PUBLIC ${CMAKE_SOURCE_DIR}/vendor/imgui
-	PUBLIC ${CMAKE_SOURCE_DIR}/vendor/imgui/backends)
+	PUBLIC ${CMAKE_SOURCE_DIR}/vendor/imgui/backends
+)
 
 target_link_libraries(FreeScubaOverlay
 	PRIVATE dxgi.lib
@@ -87,7 +88,6 @@ add_custom_command(
   ${CMAKE_BINARY_DIR}/artifacts/$<CONFIG>/manifest.vrmanifest
 )
 
-
 # Copy icon
 add_custom_command(
   TARGET FreeScubaOverlay POST_BUILD
@@ -95,7 +95,6 @@ add_custom_command(
   ${CMAKE_SOURCE_DIR}/assets/icon_1k.png
   ${CMAKE_BINARY_DIR}/artifacts/$<CONFIG>/icon_1k.png
 )
-
 
 # Copy openvrapi.dll
 add_custom_command(
