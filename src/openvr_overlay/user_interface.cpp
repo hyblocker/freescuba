@@ -8,11 +8,22 @@
 // DrawJoystickInput :: Imgui commands to draw a nice joystick control to show what the current joystick value is
 // DrawGlove :: Displays a single Glove's state. Contains the buttons for trigger state change.
 
+ImFont* fontBold    = nullptr;
+ImFont* fontLight   = nullptr;
+ImFont* fontRegular = nullptr;
+
 void SetupImgui() {
     ImGuiStyle& style = ImGui::GetStyle();
 
     // @TODO: ImGui style here
 
+    ImGuiIO& io = ImGui::GetIO();
+
+    const float FONT_SIZE = 16.0f;
+
+    fontRegular = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf",  FONT_SIZE); // Segoe UI
+    fontBold    = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeuib.ttf", FONT_SIZE); // Segoe UI Bold
+    fontLight   = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeuil.ttf", FONT_SIZE); // Segoe UI Light
 }
 void CleanupImgui() {
 

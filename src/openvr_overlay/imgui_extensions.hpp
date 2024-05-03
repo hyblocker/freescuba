@@ -3,6 +3,10 @@
 #include <imgui.h>
 #include <string>
 
+extern ImFont* fontBold;
+extern ImFont* fontLight;
+extern ImFont* fontRegular;
+
 namespace ImGui
 {
 	// Group panels taken from https://github.com/ocornut/imgui/issues/1496#issuecomment-655048353
