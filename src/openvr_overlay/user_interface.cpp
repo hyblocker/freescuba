@@ -17,11 +17,34 @@ ImFont* fontRegular = nullptr;
 #define CLAMP(t,a,b) (MAX(MIN(t, b), a))
 
 void SetupImgui() {
-    ImGuiStyle& style = ImGui::GetStyle();
-
     // @TODO: ImGui style here
 
     ImGuiIO& io = ImGui::GetIO();
+
+    ImGuiStyle& style = ImGui::GetStyle();
+
+    // Main window should not have any border as it's rooted to the executable window
+    style.WindowBorderSize  = 0.0f;
+    style.WindowRounding    = 0.0f;
+
+    // Rounding
+    style.ChildRounding     = 6.0f;
+    style.FrameRounding     = 6.0f;
+    style.PopupRounding     = 6.0f;
+    style.TabRounding       = 6.0f;
+
+    // Colours
+    ImVec4* colors = ImGui::GetStyle().Colors;
+    colors[ImGuiCol_WindowBg]           = ImVec4(0.01f, 0.01f, 0.01f, 0.94f);
+    colors[ImGuiCol_Border]             = ImVec4(0.30f, 0.30f, 0.30f, 0.55f);
+    colors[ImGuiCol_FrameBg]            = ImVec4(0.24f, 0.26f, 0.27f, 0.54f);
+    colors[ImGuiCol_FrameBgHovered]     = ImVec4(0.26f, 0.26f, 0.26f, 0.40f);
+    colors[ImGuiCol_FrameBgActive]      = ImVec4(0.31f, 0.31f, 0.31f, 0.67f);
+    colors[ImGuiCol_SliderGrab]         = ImVec4(0.26f, 0.43f, 0.68f, 1.00f);
+    colors[ImGuiCol_SliderGrabActive]   = ImVec4(0.36f, 0.56f, 0.86f, 1.00f);
+    colors[ImGuiCol_Button]             = ImVec4(0.26f, 0.43f, 0.68f, 1.00f);
+    colors[ImGuiCol_ButtonHovered]      = ImVec4(0.29f, 0.52f, 0.85f, 1.00f);
+    colors[ImGuiCol_ButtonActive]       = ImVec4(0.21f, 0.33f, 0.52f, 1.00f);
 
     const float FONT_SIZE = 16.0f;
 
