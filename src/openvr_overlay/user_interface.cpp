@@ -161,9 +161,6 @@ void DrawGlove(const std::string name, const std::string id, protocol::ContactGl
                     ImGui::TableSetupColumn(nullptr, ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoResize, widthBars);
                     ImGui::TableSetupColumn(nullptr, ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoResize, widthBars);
 
-// #define DRAW_FINGER_BEND_VALUE(fingerValue) \
-//                     ImGui::ProgressBarPositiveNegative(fingerValue, FINGER_CURL_COLOUR, FINGER_REVERSE_CURL_COLOUR, ImVec2(-FLT_MIN, 0), "%.4f");
-
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
                     ImGui::PushFont(fontBold);
@@ -225,8 +222,6 @@ void DrawGlove(const std::string name, const std::string id, protocol::ContactGl
                     DRAW_FINGER_BEND_VALUE(glove.pinkyTip);
 
                     ImGui::EndTable();
-
-// #undef DRAW_FINGER_BEND_VALUE
                 }
 
                 ImGui::Spacing(); 
@@ -268,19 +263,6 @@ void DrawGlove(const std::string name, const std::string id, protocol::ContactGl
 
                         ImGui::EndTable();
                     }
-                    // ImGui::PushFont(fontBold);
-                    // ImGui::Text("Thumb Activate");
-                    // ImGui::PopFont();
-                    // ImGui::SameLine();
-                    // ImGui::SliderFloat("##Thumb Activate", &glove.calibration.gestures.thumb.activate, 0, 1);
-
-                    // ImGui::SliderFloatStyled("Thumb Deactivate", &glove.calibration.gestures.thumb.deactivate, 0, 1);
-                    // 
-                    // ImGui::SliderFloat("Trigger Activate", &glove.calibration.gestures.trigger.activate, 0, 1);
-                    // ImGui::SliderFloat("Trigger Deactivate", &glove.calibration.gestures.trigger.deactivate, 0, 1);
-                    // 
-                    // ImGui::SliderFloat("Grip Activate", &glove.calibration.gestures.grip.activate, 0, 1);
-                    // ImGui::SliderFloat("Grip Deactivate", &glove.calibration.gestures.grip.deactivate, 0, 1);
 
                     ImGui::Spacing();
                 }
