@@ -266,6 +266,20 @@ void DrawGlove(const std::string name, const std::string id, protocol::ContactGl
 
                     ImGui::Spacing();
                 }
+                
+                if (ImGui::CollapsingHeader("Raw values")) {
+                    ImGui::Text("Thumb Root:  %d", glove.thumbRootRaw);
+                    ImGui::Text("Thumb Tip:   %d", glove.thumbTipRaw);
+                    ImGui::Text("Index Root:  %d", glove.indexRootRaw);
+                    ImGui::Text("Index Tip:   %d", glove.indexTipRaw);
+                    ImGui::Text("Middle Root: %d", glove.middleRootRaw);
+                    ImGui::Text("Middle Tip:  %d", glove.middleTipRaw);
+                    ImGui::Text("Ring Root:   %d", glove.ringRootRaw);
+                    ImGui::Text("Ring Tip:    %d", glove.ringTipRaw);
+                    ImGui::Text("Pinky Root:  %d", glove.pinkyRootRaw);
+                    ImGui::Text("Pinky Tip:   %d", glove.pinkyTipRaw);
+                }
+
                 ImGui::EndGroupPanel();
                 ImGui::PopID();
             }
