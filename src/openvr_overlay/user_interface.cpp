@@ -798,7 +798,13 @@ void DrawUi(const bool isOverlay, AppState& state) {
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(io.DisplaySize, ImGuiCond_Always);
 
-    ImGui::Begin("FreeScuba - Open source contact gloves driver", 0, ImGuiWindowFlags_NoTitleBar);
+    ImGui::Begin("FreeScuba - Open source contact gloves driver", 0,
+        // Since this is locked to the window, we want to disable:
+        //   the titlebar,
+        //   resizing and moving
+        //   collapsing the window by double clicking
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
+    );
 
     switch (state.uiState.page) {
         case ScreenState_t::ScreenStateViewData: {
