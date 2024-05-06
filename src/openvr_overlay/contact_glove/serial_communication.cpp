@@ -454,7 +454,7 @@ void SerialCommunicationManager::LogError(const char* message) const {
 
 void SerialCommunicationManager::LogWarning(const char* message) const {
     // message with port name
-    printf("%s (%s) - Warning: %s\n", message, m_port.c_str(), GetLastErrorAsString().c_str());
+    printf("%s (%s) - Warning: %s", message, m_port.c_str(), GetLastErrorAsString().c_str());
 }
 
 void SerialCommunicationManager::LogMessage(const char* message) const {
