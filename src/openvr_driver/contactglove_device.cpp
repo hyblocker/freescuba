@@ -320,9 +320,9 @@ void ContactGloveDevice::Update(const protocol::ContactGloveState_t& updateState
 // Approximates a curl value given a metacarpal bone, proximal bone and distal bone
 float ContactGloveDevice::ApproximateSingleFingerCurl(HandSkeletonBone metacarpal, HandSkeletonBone distal) {
 
-    vr::HmdVector4_t metacarpalPos = m_handTransforms[static_cast<short>(metacarpal)].position;
-    vr::HmdVector4_t proximalPos = m_handTransforms[static_cast<short>(metacarpal) + 1].position;
-    vr::HmdVector4_t distalPos = m_handTransforms[static_cast<short>(distal)].position;
+    vr::HmdVector4_t metacarpalPos  = m_handTransforms[static_cast<short>(metacarpal)].position;
+    vr::HmdVector4_t proximalPos    = m_handTransforms[static_cast<short>(metacarpal) + 1].position;
+    vr::HmdVector4_t distalPos      = m_handTransforms[static_cast<short>(distal)].position;
 
     // Compute absolute proximal position since bone positions are relative
     proximalPos.v[0] = metacarpalPos.v[0] + proximalPos.v[0];
@@ -330,7 +330,7 @@ float ContactGloveDevice::ApproximateSingleFingerCurl(HandSkeletonBone metacarpa
     proximalPos.v[2] = metacarpalPos.v[2] + proximalPos.v[2];
 
     // Bone positions are relative, add them to compute the absolute position of the distal bone
-    for (int i = metacarpal; i < distal; i++) {
+    for (int i = metacarpal; i <= distal; i++) {
         vr::HmdVector4_t bonePosition = m_handTransforms[static_cast<short>(i)].position;
         distalPos.v[0] = distalPos.v[0] + bonePosition.v[0];
         distalPos.v[1] = distalPos.v[1] + bonePosition.v[1];
@@ -373,23 +373,25 @@ float ContactGloveDevice::ApproximateSingleFingerCurl(HandSkeletonBone metacarpa
     double angle = acos(dotProduct);
     const double ninetyDeg = DegToRad(90.f);
 
-    return min(max((float) (angle / ninetyDeg), -1.f), 1.f);
+    return Clamp((float) (angle / ninetyDeg), -1.f, 1.f);
 }
 
 // Approximates curl values from a skeletal input pose
 void ContactGloveDevice::ApproximateCurls(const protocol::ContactGloveState_t& updateState) {
 
-    // m_curlThumb     = ApproximateSingleFingerCurl(HandSkeletonBone::kHandSkeletonBone_Thumb0,           HandSkeletonBone::kHandSkeletonBone_Thumb3);
-    // m_curlIndex     = ApproximateSingleFingerCurl(HandSkeletonBone::kHandSkeletonBone_IndexFinger1,     HandSkeletonBone::kHandSkeletonBone_IndexFinger4);
-    // m_curlMiddle    = ApproximateSingleFingerCurl(HandSkeletonBone::kHandSkeletonBone_MiddleFinger1,    HandSkeletonBone::kHandSkeletonBone_MiddleFinger4);
-    // m_curlRing      = ApproximateSingleFingerCurl(HandSkeletonBone::kHandSkeletonBone_RingFinger1,      HandSkeletonBone::kHandSkeletonBone_RingFinger4);
-    // m_curlPinky     = ApproximateSingleFingerCurl(HandSkeletonBone::kHandSkeletonBone_PinkyFinger1,     HandSkeletonBone::kHandSkeletonBone_PinkyFinger4);
-
-    m_curlThumb     = (float)(0.3 * updateState.thumbRoot   + 0.7 * updateState.thumbTip);
-    m_curlIndex     = (float)(0.3 * updateState.indexRoot   + 0.7 * updateState.indexTip);
-    m_curlMiddle    = (float)(0.3 * updateState.middleRoot  + 0.7 * updateState.middleTip);
-    m_curlRing      = (float)(0.3 * updateState.ringRoot    + 0.7 * updateState.ringTip);
-    m_curlPinky     = (float)(0.3 * updateState.pinkyRoot   + 0.7 * updateState.pinkyTip);
+    if (updateState.useCurl) {
+        m_curlThumb     = ApproximateSingleFingerCurl(HandSkeletonBone::kHandSkeletonBone_Thumb0,           HandSkeletonBone::kHandSkeletonBone_Thumb3);
+        m_curlIndex     = ApproximateSingleFingerCurl(HandSkeletonBone::kHandSkeletonBone_IndexFinger1,     HandSkeletonBone::kHandSkeletonBone_IndexFinger4);
+        m_curlMiddle    = ApproximateSingleFingerCurl(HandSkeletonBone::kHandSkeletonBone_MiddleFinger1,    HandSkeletonBone::kHandSkeletonBone_MiddleFinger4);
+        m_curlRing      = ApproximateSingleFingerCurl(HandSkeletonBone::kHandSkeletonBone_RingFinger1,      HandSkeletonBone::kHandSkeletonBone_RingFinger4);
+        m_curlPinky     = ApproximateSingleFingerCurl(HandSkeletonBone::kHandSkeletonBone_PinkyFinger1,     HandSkeletonBone::kHandSkeletonBone_PinkyFinger4);
+    } else {
+        m_curlThumb     = (float)(0.3 * updateState.thumbRoot   + 0.7 * updateState.thumbTip);
+        m_curlIndex     = (float)(0.3 * updateState.indexRoot   + 0.7 * updateState.indexTip);
+        m_curlMiddle    = (float)(0.3 * updateState.middleRoot  + 0.7 * updateState.middleTip);
+        m_curlRing      = (float)(0.3 * updateState.ringRoot    + 0.7 * updateState.ringTip);
+        m_curlPinky     = (float)(0.3 * updateState.pinkyRoot   + 0.7 * updateState.pinkyTip);
+    }
 }
 
 void ContactGloveDevice::UpdateSkeletalInput(const protocol::ContactGloveState_t& updateState) {
