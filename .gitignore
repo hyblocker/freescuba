@@ -501,7 +501,6 @@ FodyWeavers.xsd
 # CMake build stuff
 *.dir/
 dl/
-bindings/
 
 # Android
 *.iml
