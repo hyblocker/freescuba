@@ -33,6 +33,7 @@ enum class KnuckleDeviceComponentIndex_t : uint8_t {
     ATouch,
     BClick,
     BTouch,
+    FingerThumb,
     FingerIndex,
     FingerMiddle,
     FingerRing,

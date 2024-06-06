@@ -187,10 +187,11 @@ void ContactGloveDevice::SetupProps() {
     vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/a/touch",			&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ATouch)]);
     vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/b/click",			&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BClick)]);
     vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/b/touch",			&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BTouch)]);
-    vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/finger/index",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerIndex)],	vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
+    vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/finger/thumb",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerThumb)],	    vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
+    vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/finger/index",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerIndex)],	    vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
     vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/finger/middle",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerMiddle)],	vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
-    vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/finger/ring",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerRing)],	vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
-    vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/finger/pinky",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerPinky)],	vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
+    vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/finger/ring",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerRing)],	    vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
+    vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/finger/pinky",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerPinky)],	    vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
 }
 
 // Input has to be fed at 90Hz, otherwise some applications will freak out and interpret ghost inputs
@@ -388,7 +389,7 @@ void ContactGloveDevice::UpdateSkeletalInput(const protocol::ContactGloveState_t
 
     m_handSimulation.ComputeSkeletonTransforms(m_isLeft ? vr::TrackedControllerRole_LeftHand : vr::TrackedControllerRole_RightHand, curls, splays, m_handTransforms);
 
-    vr::VRDriverInput()->UpdateSkeletonComponent(m_skeletalComponentHandle, vr::VRSkeletalMotionRange_WithController, m_handTransforms, NUM_BONES);
+    vr::VRDriverInput()->UpdateSkeletonComponent(m_skeletalComponentHandle, vr::VRSkeletalMotionRange_WithController,    m_handTransforms, NUM_BONES);
     vr::VRDriverInput()->UpdateSkeletonComponent(m_skeletalComponentHandle, vr::VRSkeletalMotionRange_WithoutController, m_handTransforms, NUM_BONES);
 
     ApproximateCurls(updateState);
@@ -470,11 +471,20 @@ void ContactGloveDevice::UpdateInputs(const protocol::ContactGloveState_t& updat
         // vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TrackpadY)], m_thumbActivation.value * -1, 0);
 
         // Finger curl for knuckles emu to work
-        // vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TrackpadTouch)], m_thumbActivation.isActive, 0);
-        vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerIndex)], updateState.indexRoot, 0);
-        vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerMiddle)], updateState.middleRoot, 0);
-        vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerRing)], updateState.ringRoot, 0);
-        vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerPinky)], updateState.pinkyRoot, 0);
+        if (updateState.useCurl) {
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerThumb)],   m_curlThumb, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerIndex)],   m_curlIndex, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerMiddle)],  m_curlMiddle, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerRing)],    m_curlRing, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerPinky)],   m_curlPinky, 0);
+        }
+        else {
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerThumb)],   updateState.thumbRoot, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerIndex)],   updateState.indexRoot, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerMiddle)],  updateState.middleRoot, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerRing)],    updateState.ringRoot, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerPinky)],   updateState.pinkyRoot, 0);
+        }
 
         // Update the current input state
         if (m_ignorePosesThreadLocal != updateState.ignorePose) {
