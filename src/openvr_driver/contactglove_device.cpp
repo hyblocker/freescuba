@@ -419,30 +419,46 @@ void ContactGloveDevice::UpdateInputs(const protocol::ContactGloveState_t& updat
 
         // Handle skeletal input
         UpdateSkeletalInput(updateState);
-
+        
         // Activate thresholds
-        HandleGesture(m_thumbActivation, updateState.calibration.gestures.thumb, updateState.thumbTip);
-        // TEMP
         if (updateState.useCurl) {
+            HandleGesture(m_thumbActivation, updateState.calibration.gestures.thumb, m_curlThumb);
             HandleGesture(m_triggerActivation, updateState.calibration.gestures.trigger, m_curlIndex);
+            HandleGesture(m_gripActivation, updateState.calibration.gestures.grip, (m_curlMiddle + m_curlRing + m_curlPinky) / 3.0f);
         } else {
+            HandleGesture(m_thumbActivation, updateState.calibration.gestures.thumb, updateState.thumbTip);
             HandleGesture(m_triggerActivation, updateState.calibration.gestures.trigger, updateState.indexTip);
+            HandleGesture(m_gripActivation, updateState.calibration.gestures.grip, (updateState.middleTip + updateState.ringTip + updateState.pinkyTip) / 3.0f);
         }
-        // @TODO: Weighted blend for grip?
-        HandleGesture(m_gripActivation, updateState.calibration.gestures.grip, (updateState.middleTip + updateState.ringTip + updateState.pinkyTip) / 3.0f);
 
-        // Update inputs
-        vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickX)], updateState.joystickX, 0);
-        vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickY)], -updateState.joystickY, 0); // Flipped in SteamVR for some reason
-        vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickClick)], updateState.joystickClick, 0);
-        vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickTouch)], updateState.joystickClick, 0);
+        if (updateState.hasMagnetra) {
+            // Update inputs only if magnetra is connected
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickX)], updateState.joystickX, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickY)], -updateState.joystickY, 0); // Flipped in SteamVR for some reason
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickClick)], updateState.joystickClick, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickTouch)], updateState.joystickClick, 0);
 
-        vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::AClick)], updateState.buttonDown, 0);
-        vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ATouch)], updateState.buttonDown || m_thumbActivation.isActive, 0); // Thumb is also going to activate A touch
-        vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BClick)], updateState.buttonUp, 0);
-        vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BTouch)], updateState.buttonUp, 0);
-        vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemClick)], updateState.systemUp || updateState.systemDown, 0);
-        vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemTouch)], updateState.systemUp || updateState.systemDown, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::AClick)], updateState.buttonDown, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ATouch)], updateState.buttonDown || m_thumbActivation.isActive, 0); // Thumb is also going to activate A touch
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BClick)], updateState.buttonUp, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BTouch)], updateState.buttonUp, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemClick)], updateState.systemUp || updateState.systemDown, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemTouch)], updateState.systemUp || updateState.systemDown, 0);
+        } else {
+            // Default values
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickX)], 0, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickY)], 0, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickClick)], false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickTouch)], false, 0);
+
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::AClick)], false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ATouch)], m_thumbActivation.isActive, 0); // Thumb is also going to activate A touch
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BClick)], false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BTouch)], false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemClick)], false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemTouch)], false, 0);
+        }
+
         vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TriggerClick)], m_triggerActivation.isActive, 0);
         vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TriggerValue)], m_triggerActivation.value, 0);
         // Grip value => pull?
