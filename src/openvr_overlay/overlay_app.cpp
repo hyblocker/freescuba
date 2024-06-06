@@ -248,10 +248,10 @@ namespace FreeScuba {
             case WM_ACTIVATE:
                 if (wParam == WA_INACTIVE) {
                     s_windowVisible = false;
-                    return 0;
+                    break;
                 } else {
                     s_windowVisible = true;
-                    return 0;
+                    break;
                 }
                 break;
             case WM_SYSCOMMAND:
@@ -262,12 +262,12 @@ namespace FreeScuba {
                 if ((wParam & 0xfff0) == SC_MINIMIZE) {
                     // Handle minimise
                     s_windowVisible = false;
-                    return 0;
+                    break;
                 }
                 if ((wParam & 0xfff0) == SC_RESTORE) {
                     // Handle restore
                     s_windowVisible = true;
-                    return 0;
+                    break;
                 }
                 break;
             case WM_DESTROY:
