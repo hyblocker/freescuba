@@ -114,7 +114,7 @@ private:
     ThresholdState m_triggerActivation;
     ThresholdState m_gripActivation;
 
-    vr::VRInputComponentHandle_t m_haptics;
+    vr::VRInputComponentHandle_t m_hapticInputHandle;
     vr::VRInputComponentHandle_t m_skeletalComponentHandle;
     vr::VRBoneTransform_t m_handTransforms[NUM_BONES];
     vr::VRInputComponentHandle_t m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::_Count)];

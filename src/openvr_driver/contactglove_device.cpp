@@ -27,7 +27,7 @@ ContactGloveDevice::ContactGloveDevice(DeviceProvider* devProvider, bool isLeft)
         m_shadowDevice(CONTACT_GLOVE_INVALID_DEVICE_ID),
         m_handSimulation(),
         m_ulProps(vr::k_ulInvalidPropertyContainer),
-        m_haptics(vr::k_ulInvalidInputComponentHandle),
+        m_hapticInputHandle(vr::k_ulInvalidInputComponentHandle),
         m_skeletalComponentHandle(vr::k_ulInvalidInputComponentHandle),
         m_deviceId(vr::k_unTrackedDeviceIndexInvalid) {
 
@@ -53,7 +53,11 @@ vr::EVRInitError ContactGloveDevice::Activate(uint32_t unObjectId)
     m_ulProps = vr::VRProperties()->TrackedDeviceToPropertyContainer(m_deviceId);
     SetupProps();
 
-    vr::VRDriverInput()->CreateHapticComponent(m_ulProps, "/output/haptic", &m_haptics);
+    vr::VRDriverInput()->CreateHapticComponent(m_ulProps, "/output/haptic", &m_hapticInputHandle);
+
+    // Compute default grip limit pose
+    m_handSimulation.ComputeSkeletonTransforms(m_isLeft ? vr::TrackedControllerRole_LeftHand : vr::TrackedControllerRole_RightHand, {}, {}, m_handTransforms);
+
     vr::VRDriverInput()->CreateSkeletonComponent(
         m_ulProps,
         m_isLeft ? "/input/skeleton/left" : "/input/skeleton/right",
@@ -65,8 +69,8 @@ vr::EVRInitError ContactGloveDevice::Activate(uint32_t unObjectId)
         &m_skeletalComponentHandle);
 
     // Update the skeleton immediately to inform SteamVR that we have a skeletal input capable device
-    vr::VRDriverInput()->UpdateSkeletonComponent(m_skeletalComponentHandle, vr::VRSkeletalMotionRange_WithController, m_handTransforms, NUM_BONES);
-    vr::VRDriverInput()->UpdateSkeletonComponent(m_skeletalComponentHandle, vr::VRSkeletalMotionRange_WithoutController, m_handTransforms, NUM_BONES);
+    vr::VRDriverInput()->UpdateSkeletonComponent(m_skeletalComponentHandle, vr::VRSkeletalMotionRange_WithController,       m_handTransforms, NUM_BONES);
+    vr::VRDriverInput()->UpdateSkeletonComponent(m_skeletalComponentHandle, vr::VRSkeletalMotionRange_WithoutController,    m_handTransforms, NUM_BONES);
 
     // Spawn input thread
     m_inputUpdateExecute.exchange(true);
@@ -104,7 +108,34 @@ void* ContactGloveDevice::GetComponent(const char* pchComponentNameAndVersion) {
 
 void ContactGloveDevice::DebugRequest(const char* pchRequest, char* pchResponseBuffer, uint32_t unResponseBufferSize) {}
 
-void ContactGloveDevice::Tick() {}
+void ContactGloveDevice::Tick() {
+
+    vr::VREvent_t vrEvent = {};
+    while (vr::VRServerDriverHost()->PollNextEvent(&vrEvent, sizeof(vrEvent)))
+    {
+        switch (vrEvent.eventType) {
+            case vr::VREvent_Input_HapticVibration: {
+                if (vrEvent.data.hapticVibration.componentHandle == m_hapticInputHandle) {
+                    
+                    // This is where you would send a signal to your hardware to trigger actual haptic feedback
+                    const float pulse_period    = 1.f / vrEvent.data.hapticVibration.fFrequency;
+                    const float frequency       = Clamp(pulse_period,       1000000.f / 65535.f, 1000000.f / 300.f);
+                    const float amplitude       = Clamp(vrEvent.data.hapticVibration.fAmplitude,        0.f, 1.f);
+                    const float duration        = Clamp(vrEvent.data.hapticVibration.fDurationSeconds,  0.f, 10.f);
+      
+                    if(duration == 0.f) {
+                        // Trigger a single pulse of the haptic component
+                    } else {
+                        const float pulse_count = vrEvent.data.hapticVibration.fDurationSeconds * vrEvent.data.hapticVibration.fFrequency;
+                        // const float pulse_duration = Lerp(HAPTIC_MINIMUM_DURATION, HAPTIC_MAXIMUM_DURATION, amplitude);
+                        // const float pulse_interval = pulse_period - pulse_duration;
+                    }
+                }
+            }
+            break;
+        }
+    }
+}
 
 // Creates index controller props
 void ContactGloveDevice::SetupProps() {

@@ -29,6 +29,16 @@ double Clamp(double val, const double min, const double max) {
 	return std::max(std::min(val, max), min);
 }
 
+float Lerp(float min, float max, float factor) {
+	float x = (float)(min * (1.0 - factor) + max * factor);
+	return x;
+}
+
+double Lerp(double min, double max, double factor) {
+	double x = min * (1.0 - factor) + max * factor;
+	return x;
+}
+
 vr::HmdVector3d_t GetPosition(const vr::HmdMatrix34_t& matrix) {
 	return { matrix.m[0][3], matrix.m[1][3], matrix.m[2][3] };
 }
