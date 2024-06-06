@@ -213,10 +213,10 @@ static void ComputeSkeletalTransforms(const HandSimHand& hand, vr::VRBoneTransfo
         ComputeBoneTransform(hand.role, SwingTwistToQuaternion(hand.fingers[finger].proximal.swing, hand.fingers[finger].proximal.twist), finger_joint_lengths[finger + 1][1],
             out_transforms[CalculateBoneTransformPositionFromFinger(finger, 1)]);
 
-        ComputeBoneTransform(hand.role, EulerToQuaternion(0.f, 0.f, hand.fingers[finger].intermediate.rotation), finger_joint_lengths[finger + 1][2],
+        ComputeBoneTransform(hand.role, EulerToQuaternion(hand.fingers[finger].intermediate.rotation, 0.f, 0.f), finger_joint_lengths[finger + 1][2],
             out_transforms[CalculateBoneTransformPositionFromFinger(finger, 2)]);
 
-        ComputeBoneTransform(hand.role, EulerToQuaternion(0.f, 0.f, hand.fingers[finger].distal.rotation), finger_joint_lengths[finger + 1][3],
+        ComputeBoneTransform(hand.role, EulerToQuaternion(hand.fingers[finger].distal.rotation, 0.f, 0.f), finger_joint_lengths[finger + 1][3],
             out_transforms[CalculateBoneTransformPositionFromFinger(finger, 3)]);
 
         ComputeBoneTransform(hand.role, HmdQuaternion_Identity, finger_joint_lengths[finger + 1][4], out_transforms[CalculateBoneTransformPositionFromFinger(finger, 4)]);
