@@ -12,6 +12,8 @@ double DegToRad(const double degrees);
 float DegToRad(const float degrees);
 double RadToDeg(const double rad);
 float RadToDeg(const float rad);
+float Clamp(float val, const float min, const float max);
+double Clamp(double val, const double min, const double max);
 
 vr::HmdVector3d_t GetPosition(const vr::HmdMatrix34_t& matrix);
 vr::HmdQuaternion_t GetRotation(const vr::HmdMatrix34_t& matrix);

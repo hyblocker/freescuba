@@ -3,6 +3,7 @@
 #include "maths.hpp"
 
 #include <cmath>
+#include <algorithm>
 
 double DegToRad(const double degrees) {
 	return degrees * M_PI / 180.0;
@@ -17,6 +18,15 @@ double RadToDeg(const double rad) {
 
 float RadToDeg(const float rad) {
 	return static_cast<float>( rad * 180.0 / M_PI );
+}
+
+
+float Clamp(float val, const float min, const float max) {
+	return std::max(std::min(val, max), min);
+}
+
+double Clamp(double val, const double min, const double max) {
+	return std::max(std::min(val, max), min);
 }
 
 vr::HmdVector3d_t GetPosition(const vr::HmdMatrix34_t& matrix) {

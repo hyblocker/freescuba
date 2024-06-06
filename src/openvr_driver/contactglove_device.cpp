@@ -364,24 +364,24 @@ void ContactGloveDevice::UpdateSkeletalInput(const protocol::ContactGloveState_t
 
     GloveFingerCurls curls = {
         .thumb = {
-            .proximal = updateState.thumbRoot,
-            .distal = updateState.thumbTip
+            .proximal   = Clamp(updateState.thumbRoot, -1.0f, 1.0f),
+            .distal     = Clamp(updateState.thumbTip,  -1.0f, 1.0f)
         },
         .index = {
-            .proximal = updateState.indexRoot,
-            .distal = updateState.indexTip
+            .proximal   = Clamp(updateState.indexRoot, -1.0f, 1.0f),
+            .distal     = Clamp(updateState.indexTip,  -1.0f, 1.0f)
         },
         .middle = {
-            .proximal = updateState.middleRoot,
-            .distal = updateState.middleTip
+            .proximal   = Clamp(updateState.middleRoot, -1.0f, 1.0f),
+            .distal     = Clamp(updateState.middleTip,  -1.0f, 1.0f)
         },
         .ring = {
-            .proximal = updateState.ringRoot,
-            .distal = updateState.ringTip
+            .proximal   = Clamp(updateState.ringRoot, -1.0f, 1.0f),
+            .distal     = Clamp(updateState.ringTip,  -1.0f, 1.0f)
         },
         .pinky = {
-            .proximal = updateState.pinkyRoot,
-            .distal = updateState.pinkyTip
+            .proximal   = Clamp(updateState.pinkyRoot, -1.0f, 1.0f),
+            .distal     = Clamp(updateState.pinkyTip,  -1.0f, 1.0f)
         }
     };
     GloveFingerSplays splays = {};
