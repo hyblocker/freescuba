@@ -3,7 +3,7 @@
 
 ## Demo
 
-https://github.com/hyblocker/freescuba/assets/7695629/dd491e0c-60d5-4ae3-9ad2-d7a21eeab823
+https://github.com/user-attachments/assets/fe962642-e5fb-4a0d-80cd-b1cabb9cb9e2
 
 ![Overlay user interface](https://github.com/hyblocker/freescuba/assets/7695629/944e0213-6acd-4c5c-8939-0d08c8547449)
 
