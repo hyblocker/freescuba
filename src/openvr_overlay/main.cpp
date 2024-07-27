@@ -3,6 +3,7 @@
 #include "ipc_client.hpp"
 #include "app_state.hpp"
 #include "configuration.hpp"
+#include "maths.hpp"
 
 void ForwardDataToDriver(AppState& state, IPCClient& ipcClient);
 void ProcessGlove(protocol::ContactGloveState_t& glove, MostCommonElementRingBuffer& batteryRingBuffer, std::chrono::steady_clock::time_point gloveConnected);
@@ -352,19 +353,19 @@ void ProcessGlove(protocol::ContactGloveState_t& glove, MostCommonElementRingBuf
 
         // Helper macro because 80% of the code is copy paste par joint names
         // Remaps such that rest is 0.0, and close is +1.0, and prevents values > 1.0 being output
-#define APPLY_FINGER_CALIBRATION(joint) \
-        glove.joint = std::min((glove.joint##Raw - glove.calibration.fingers.joint.rest) / (float) (glove.calibration.fingers.joint.close - glove.calibration.fingers.joint.rest), 1.0f)
+#define APPLY_FINGER_CALIBRATION(joint, structNesting) \
+        glove.joint = Clamp((glove.joint##Raw - glove.calibration.fingers.structNesting.rest) / (float) (glove.calibration.fingers.structNesting.close - glove.calibration.fingers.structNesting.rest), -1.0f, 1.0f)
 
-        APPLY_FINGER_CALIBRATION(thumbRoot);
-        APPLY_FINGER_CALIBRATION(thumbTip);
-        APPLY_FINGER_CALIBRATION(indexRoot);
-        APPLY_FINGER_CALIBRATION(indexTip);
-        APPLY_FINGER_CALIBRATION(middleRoot);
-        APPLY_FINGER_CALIBRATION(middleTip);
-        APPLY_FINGER_CALIBRATION(ringRoot);
-        APPLY_FINGER_CALIBRATION(ringTip);
-        APPLY_FINGER_CALIBRATION(pinkyRoot);
-        APPLY_FINGER_CALIBRATION(pinkyTip);
+        APPLY_FINGER_CALIBRATION(thumbRoot,     thumb.proximal);
+        APPLY_FINGER_CALIBRATION(thumbTip,      thumb.distal);
+        APPLY_FINGER_CALIBRATION(indexRoot,     index.proximal);
+        APPLY_FINGER_CALIBRATION(indexTip,      index.distal);
+        APPLY_FINGER_CALIBRATION(middleRoot,    middle.proximal);
+        APPLY_FINGER_CALIBRATION(middleTip,     middle.distal);
+        APPLY_FINGER_CALIBRATION(ringRoot,      ring.proximal);
+        APPLY_FINGER_CALIBRATION(ringTip,       ring.distal);
+        APPLY_FINGER_CALIBRATION(pinkyRoot,     pinky.proximal);
+        APPLY_FINGER_CALIBRATION(pinkyTip,      pinky.distal);
 
 #undef APPLY_FINGER_CALIBRATION
 

@@ -139,12 +139,12 @@ void F_CRC_InitialiseTable(void)
  * Description: Calculate the CRC value from a Lookup Table.
  *
  * Notes:		F_CRC_InitialiseTable() must be called first.
- *                      Since AF_Datos is a char array, it is possible to compute any kind of file or array.
+ *                      Since AF_Data is a char array, it is possible to compute any kind of file or array.
  *
- * Returns:		The CRC of the AF_Datos.
+ * Returns:		The CRC of the AF_Data.
  *
  *********************************************************************/
-crc F_CRC_CalculateCheckSum(uint8_t const AF_Datos[], size_t VF_nBytes)
+crc F_CRC_CalculateCheckSum(uint8_t const AF_Data[], size_t VF_nBytes)
 {
     crc	VP_CRCTableValue = INITIAL_VALUE;
     uint16_t VP_bytes = 0;
@@ -152,9 +152,9 @@ crc F_CRC_CalculateCheckSum(uint8_t const AF_Datos[], size_t VF_nBytes)
     for (VP_bytes = 0; VP_bytes < VF_nBytes; VP_bytes++)
     {
 #if (REVERSED_DATA == TRUE)
-        VP_CRCTableValue = (VP_CRCTableValue >> 8) ^ A_crcLookupTable[((uint8_t)(VP_CRCTableValue & 0xFF)) ^ AF_Datos[VP_bytes]];
+        VP_CRCTableValue = (VP_CRCTableValue >> 8) ^ A_crcLookupTable[((uint8_t)(VP_CRCTableValue & 0xFF)) ^ AF_Data[VP_bytes]];
 #else
-        VP_CRCTableValue = (VP_CRCTableValue << 8) ^ A_crcLookupTable[((uint8_t)((VP_CRCTableValue >> (WIDTH - 8)) & 0xFF)) ^ AF_Datos[VP_bytes]];
+        VP_CRCTableValue = (VP_CRCTableValue << 8) ^ A_crcLookupTable[((uint8_t)((VP_CRCTableValue >> (WIDTH - 8)) & 0xFF)) ^ AF_Data[VP_bytes]];
 #endif
     }
 
@@ -181,10 +181,10 @@ crc F_CRC_CalculateCheckSum(uint8_t const AF_Datos[], size_t VF_nBytes)
  *
  * Notes:
  *
- * Returns:		The CRC of the AF_Datos.
+ * Returns:		The CRC of the AF_Data.
  *
  *********************************************************************/
-crc F_CRC_CalculateCheckSum(uint8_t const AF_Datos[], size_t VF_nBytes)
+crc F_CRC_CalculateCheckSum(uint8_t const AF_Data[], size_t VF_nBytes)
 {
     crc	VP_CRCTableValue = INITIAL_VALUE;
     int16_t VP_bytes = 0;
@@ -192,9 +192,9 @@ crc F_CRC_CalculateCheckSum(uint8_t const AF_Datos[], size_t VF_nBytes)
     for (VP_bytes = 0; VP_bytes < VF_nBytes; VP_bytes++)
     {
 #if (REVERSED_DATA == TRUE)
-        VP_CRCTableValue = (VP_CRCTableValue >> 8) ^ F_CRC_ObtainTableValue(((uint8_t)(VP_CRCTableValue & 0xFF)) ^ AF_Datos[VP_bytes]);
+        VP_CRCTableValue = (VP_CRCTableValue >> 8) ^ F_CRC_ObtainTableValue(((uint8_t)(VP_CRCTableValue & 0xFF)) ^ AF_Data[VP_bytes]);
 #else
-        VP_CRCTableValue = (VP_CRCTableValue << 8) ^ F_CRC_ObtainTableValue(((uint8_t)((VP_CRCTableValue >> (WIDTH - 8)) & 0xFF)) ^ AF_Datos[VP_bytes]);
+        VP_CRCTableValue = (VP_CRCTableValue << 8) ^ F_CRC_ObtainTableValue(((uint8_t)((VP_CRCTableValue >> (WIDTH - 8)) & 0xFF)) ^ AF_Data[VP_bytes]);
 #endif
     }
 

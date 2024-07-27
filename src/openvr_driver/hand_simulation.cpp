@@ -200,13 +200,12 @@ static void ComputeSkeletalTransforms(const HandSimHand& hand, vr::VRBoneTransfo
     ComputeBoneTransformMetacarpal(
         hand.role, SwingTwistToQuaternion(hand.thumb.metacarpal.swing, hand.thumb.metacarpal.twist), finger_joint_lengths[0][0], out_transforms[kHandSkeletonBone_Thumb0]);
     ComputeBoneTransform(hand.role, SwingTwistToQuaternion(hand.thumb.proximal.swing, hand.thumb.metacarpal.twist), finger_joint_lengths[0][1], out_transforms[kHandSkeletonBone_Thumb1]);
-    ComputeBoneTransform(hand.role, EulerToQuaternion(0.f, 0.f, hand.thumb.distal.rotation), finger_joint_lengths[0][2], out_transforms[kHandSkeletonBone_Thumb2]);
+    ComputeBoneTransform(hand.role, EulerToQuaternion(hand.thumb.distal.rotation, 0.f, 0.f), finger_joint_lengths[0][2], out_transforms[kHandSkeletonBone_Thumb2]);
     ComputeBoneTransform(hand.role, HmdQuaternion_Identity, finger_joint_lengths[0][3], out_transforms[kHandSkeletonBone_Thumb3]);
 
     // index, middle, ring, pinky
     // We can do these all together as they all require the same calculations
-    for (int finger = 0; finger < 4; finger++)
-    {
+    for (int finger = 0; finger < 4; finger++) {
         ComputeBoneTransformMetacarpal(hand.role, SwingTwistToQuaternion(hand.fingers[finger].metacarpal.swing, hand.fingers[finger].metacarpal.twist),
             finger_joint_lengths[finger + 1][0], out_transforms[CalculateBoneTransformPositionFromFinger(finger, 0)]);
 
@@ -262,10 +261,10 @@ void GloveHandSimulation::ComputeSkeletonTransforms(vr::ETrackedControllerRole r
     hand.thumb.distal.rotation += DegToRad(curls.thumb.distal * 90.f);
 
     // But we can batch up the fingers with a generic apply function.
-    ApplyGenericFingerTransform(curls.index, splays.index, hand.fingers[0]);
-    ApplyGenericFingerTransform(curls.middle, splays.middle, hand.fingers[1]);
-    ApplyGenericFingerTransform(curls.ring, splays.ring, hand.fingers[2]);
-    ApplyGenericFingerTransform(curls.pinky, splays.pinky, hand.fingers[3]);
+    ApplyGenericFingerTransform(curls.index,    splays.index,   hand.fingers[0]);
+    ApplyGenericFingerTransform(curls.middle,   splays.middle,  hand.fingers[1]);
+    ApplyGenericFingerTransform(curls.ring,     splays.ring,    hand.fingers[2]);
+    ApplyGenericFingerTransform(curls.pinky,    splays.pinky,   hand.fingers[3]);
 
     // Now compute
     ComputeSkeletalTransforms(hand, out_transforms);

@@ -31,16 +31,16 @@ AppState::AppState() {
     gloveRight.calibration.joystick.threshold           = 0.1f;
 
     // Default finger calibration
-    gloveLeft.calibration.fingers.thumbRoot.close       = 0xFFFF;
-    gloveLeft.calibration.fingers.thumbTip.close        = 0xFFFF;
-    gloveLeft.calibration.fingers.indexRoot.close       = 0xFFFF;
-    gloveLeft.calibration.fingers.indexTip.close        = 0xFFFF;
-    gloveLeft.calibration.fingers.middleRoot.close      = 0xFFFF;
-    gloveLeft.calibration.fingers.middleTip.close       = 0xFFFF;
-    gloveLeft.calibration.fingers.ringRoot.close        = 0xFFFF;
-    gloveLeft.calibration.fingers.ringTip.close         = 0xFFFF;
-    gloveLeft.calibration.fingers.pinkyRoot.close       = 0xFFFF;
-    gloveLeft.calibration.fingers.pinkyTip.close        = 0xFFFF;
+    gloveLeft.calibration.fingers.thumb.proximal.close  = 0xFFFF;
+    gloveLeft.calibration.fingers.thumb.distal.close    = 0xFFFF;
+    gloveLeft.calibration.fingers.index.proximal.close  = 0xFFFF;
+    gloveLeft.calibration.fingers.index.distal.close    = 0xFFFF;
+    gloveLeft.calibration.fingers.middle.proximal.close = 0xFFFF;
+    gloveLeft.calibration.fingers.middle.distal.close   = 0xFFFF;
+    gloveLeft.calibration.fingers.ring.proximal.close   = 0xFFFF;
+    gloveLeft.calibration.fingers.ring.distal.close     = 0xFFFF;
+    gloveLeft.calibration.fingers.pinky.proximal.close  = 0xFFFF;
+    gloveLeft.calibration.fingers.pinky.distal.close    = 0xFFFF;
 
     // Default pose calibration for left glove
     gloveLeft.calibration.poseOffset.pos.v[0]           =  0.022108916431138825;
@@ -83,4 +83,7 @@ AppState::AppState() {
     gloveLeft.gloveBatteryRaw                           = protocol::GLOVE_BATTERY_INVALID;
     gloveRight.gloveBattery                             = protocol::GLOVE_BATTERY_INVALID;
     gloveRight.gloveBatteryRaw                          = protocol::GLOVE_BATTERY_INVALID;
+
+    // Finger calibration state
+    uiState.targetFinger                                = CalibrationFinger_t::Finger_Thumb;
 }

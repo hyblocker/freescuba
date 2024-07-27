@@ -55,7 +55,7 @@ vr::EVRInitError ContactGloveDevice::Activate(uint32_t unObjectId)
 
     vr::VRDriverInput()->CreateHapticComponent(m_ulProps, "/output/haptic", &m_hapticInputHandle);
 
-    // Compute default grip limit pose
+    // Compute initial pose
     m_handSimulation.ComputeSkeletonTransforms(m_isLeft ? vr::TrackedControllerRole_LeftHand : vr::TrackedControllerRole_RightHand, {}, {}, m_handTransforms);
 
     vr::VRDriverInput()->CreateSkeletonComponent(
@@ -64,8 +64,8 @@ vr::EVRInitError ContactGloveDevice::Activate(uint32_t unObjectId)
         m_isLeft ? "/skeleton/hand/left" : "/skeleton/hand/right",
         "/pose/raw",
         vr::EVRSkeletalTrackingLevel::VRSkeletalTracking_Full,
-        m_handTransforms,
-        NUM_BONES,
+        nullptr,
+        0U,
         &m_skeletalComponentHandle);
 
     // Update the skeleton immediately to inform SteamVR that we have a skeletal input capable device
@@ -111,25 +111,29 @@ void ContactGloveDevice::DebugRequest(const char* pchRequest, char* pchResponseB
 void ContactGloveDevice::Tick() {
 
     vr::VREvent_t vrEvent = {};
-    while (vr::VRServerDriverHost()->PollNextEvent(&vrEvent, sizeof(vrEvent)))
-    {
+    while (vr::VRServerDriverHost()->PollNextEvent(&vrEvent, sizeof(vrEvent))) {
         switch (vrEvent.eventType) {
             case vr::VREvent_Input_HapticVibration: {
                 if (vrEvent.data.hapticVibration.componentHandle == m_hapticInputHandle) {
-                    
+
                     // This is where you would send a signal to your hardware to trigger actual haptic feedback
                     const float pulse_period    = 1.f / vrEvent.data.hapticVibration.fFrequency;
-                    const float frequency       = Clamp(pulse_period,       1000000.f / 65535.f, 1000000.f / 300.f);
-                    const float amplitude       = Clamp(vrEvent.data.hapticVibration.fAmplitude,        0.f, 1.f);
-                    const float duration        = Clamp(vrEvent.data.hapticVibration.fDurationSeconds,  0.f, 10.f);
-      
-                    if(duration == 0.f) {
+                    const float frequency       = Clamp(pulse_period, 1000000.f / 65535.f, 1000000.f / 300.f);
+                    const float amplitude       = Clamp(vrEvent.data.hapticVibration.fAmplitude, 0.f, 1.f);
+                    const float duration        = Clamp(vrEvent.data.hapticVibration.fDurationSeconds, 0.f, 10.f);
+
+                    if (duration == 0.f) {
                         // Trigger a single pulse of the haptic component
                     } else {
-                        const float pulse_count = vrEvent.data.hapticVibration.fDurationSeconds * vrEvent.data.hapticVibration.fFrequency;
-                        // const float pulse_duration = Lerp(HAPTIC_MINIMUM_DURATION, HAPTIC_MAXIMUM_DURATION, amplitude);
-                        // const float pulse_interval = pulse_period - pulse_duration;
+                        const float pulse_count     = vrEvent.data.hapticVibration.fDurationSeconds * vrEvent.data.hapticVibration.fFrequency;
+                        // const float pulse_duration  = Lerp(HAPTIC_MINIMUM_DURATION, HAPTIC_MAXIMUM_DURATION, amplitude);
+                        // const float pulse_interval  = pulse_period - pulse_duration;
+
+                        // @TODO: Send haptic event to the gloves
+                        //        Problem, I don't know how to tell the haptic motor to turn on at a given frequency :(
                     }
+
+
                 }
             }
             break;
@@ -140,11 +144,10 @@ void ContactGloveDevice::Tick() {
 // Creates index controller props
 void ContactGloveDevice::SetupProps() {
 
-    // @TODO: Gloves props, we want to use device emulation for VRChat etc
+#define USE_KNUCKLES_PROPS 1
 
     // Props taken from
     // https://github.com/LucidVR/opengloves-driver/blob/v0.5.2/src/DeviceDriver/KnuckleDriver.cpp#L39
-    // vr::VRProperties()->SetInt32Property(m_ulProps,			vr::Prop_ControllerHandSelectionPriority_Int32,		2147483647); // @FIXME: is this even necessary????
     vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_SerialNumber_String,						m_serial.c_str());
     vr::VRProperties()->SetBoolProperty(m_ulProps,			vr::Prop_WillDriftInYaw_Bool,						false);
     vr::VRProperties()->SetBoolProperty(m_ulProps,			vr::Prop_DeviceIsWireless_Bool,						true);
@@ -170,8 +173,7 @@ void ContactGloveDevice::SetupProps() {
     vr::VRProperties()->SetBoolProperty(m_ulProps,			vr::Prop_HasCameraComponent_Bool,					false);
     vr::VRProperties()->SetBoolProperty(m_ulProps,			vr::Prop_HasDriverDirectModeComponent_Bool,			false);
     vr::VRProperties()->SetBoolProperty(m_ulProps,			vr::Prop_HasVirtualDisplayComponent_Bool,			false);
-    vr::VRProperties()->SetInt32Property(m_ulProps,			vr::Prop_ControllerHandSelectionPriority_Int32,		2147483647);
-    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_ModelNumber_String,						m_isLeft ? "Knuckles Left" : "Knuckles Right");
+    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_ModelNumber_String,						m_isLeft ? "Contact Glove Left" : "Contact Glove Right");
     vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_RenderModelName_String,					m_isLeft ? "{indexcontroller}valve_controller_knu_1_0_left" : "{indexcontroller}valve_controller_knu_1_0_right");
     vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_ManufacturerName_String,					m_deviceManufacturer.c_str());
     vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_TrackingFirmwareVersion_String,			"1562916277 watchman@ValveBuilder02 2019-07-12 FPGA 538(2.26/10/2) BL 0 VRC 1562916277 Radio 1562882729");
@@ -183,10 +185,7 @@ void ContactGloveDevice::SetupProps() {
     vr::VRProperties()->SetUint64Property(m_ulProps,		vr::Prop_VRCVersion_Uint64,							1562916277U);
     vr::VRProperties()->SetUint64Property(m_ulProps,		vr::Prop_RadioVersion_Uint64,						1562882729U);
     vr::VRProperties()->SetUint64Property(m_ulProps,		vr::Prop_DongleVersion_Uint64,						1558748372U);
-    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_Firmware_ProgrammingTarget_String,			m_isLeft ? "LHR-E217CD00" : "LHR-E217CD01");
-    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_ResourceRoot_String,						"indexcontroller");
-    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_RegisteredDeviceType_String,				m_isLeft ? "valve/index_controllerLHR-E217CD00" : "valve/index_controllerLHR-E217CD01");
-    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_InputProfilePath_String,					"{indexcontroller}/input/index_controller_profile.json");
+    vr::VRProperties()->SetInt32Property(m_ulProps,			vr::Prop_Axis2Type_Int32,                           vr::k_eControllerAxis_Trigger);
     vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_NamedIconPathDeviceOff_String,				m_isLeft ? "{freescuba}/icons/left_controller_status_off.png"				: "{freescuba}/icons/right_controller_status_off.png");
     vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_NamedIconPathDeviceSearching_String,		m_isLeft ? "{freescuba}/icons/left_controller_status_searching.gif"			: "{freescuba}/icons/right_controller_status_searching.gif");
     vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_NamedIconPathDeviceSearchingAlert_String,	m_isLeft ? "{freescuba}/icons/left_controller_status_searching_alert.gif"	: "{freescuba}/icons/right_controller_status_searching_alert.gif");
@@ -196,11 +195,27 @@ void ContactGloveDevice::SetupProps() {
     vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_NamedIconPathDeviceStandby_String,			m_isLeft ? "{freescuba}/icons/left_controller_status_off.png"				: "{freescuba}/icons/right_controller_status_off.png");
     vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_NamedIconPathDeviceAlertLow_String,		m_isLeft ? "{freescuba}/icons/left_controller_status_ready_low.png"			: "{freescuba}/icons/right_controller_status_ready_low.png");
 
-    vr::VRProperties()->SetInt32Property(m_ulProps,			vr::Prop_Axis2Type_Int32,                           vr::k_eControllerAxis_Trigger);
+#if defined(USE_KNUCKLES_PROPS) && (USE_KNUCKLES_PROPS == 1)
     vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_ControllerType_String,                     "knuckles");
+    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_ResourceRoot_String,						"indexcontroller");
+    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_InputProfilePath_String,					"{indexcontroller}/input/index_controller_profile.json");
+    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_Firmware_ProgrammingTarget_String,			m_isLeft ? "LHR-E217CD00" : "LHR-E217CD01");
+    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_RegisteredDeviceType_String,				m_isLeft ? "valve/index_controllerLHR-E217CD00" : "valve/index_controllerLHR-E217CD01");
+#else
+    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_ControllerType_String,                     "contact_glove");
+    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_ResourceRoot_String,						"freescuba");
+    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_InputProfilePath_String,					"{freescuba}/input/free_scuba_profile.json");
+    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_Firmware_ProgrammingTarget_String,			m_isLeft ? "LHR-FFFFFFF1" : "LHR-FFFFFFF2");
+    vr::VRProperties()->SetStringProperty(m_ulProps,		vr::Prop_RegisteredDeviceType_String,				m_isLeft ? "diverx/contact_gloveLHR-FFFFFFF1" : "diverx/contact_gloveLHR-FFFFFFF2");
+#endif
+
 
     vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/system/click",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemClick)]);
     vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/system/touch",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemTouch)]);
+    vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/systemdown/click",	&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemDownClick)]);
+    vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/systemdown/touch",	&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemDownTouch)]);
+    vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/systemup/click",	&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemUpClick)]);
+    vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/systemup/touch",	&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemUpTouch)]);
     vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/trigger/click",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TriggerClick)]);
     vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/trigger/value",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TriggerValue)],	vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedOneSided);
     vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/trackpad/x",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TrackpadX)],		vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
@@ -212,8 +227,8 @@ void ContactGloveDevice::SetupProps() {
     vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/grip/force",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::GripForce)],		vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedOneSided);
     vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/thumbstick/click",	&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickClick)]);
     vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/thumbstick/touch",	&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickTouch)]);
-    vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/thumbstick/x",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickX)],	vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
-    vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/thumbstick/y",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickY)],	vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
+    vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/thumbstick/x",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickX)],	    vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
+    vr::VRDriverInput()->CreateScalarComponent( m_ulProps,	"/input/thumbstick/y",		&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickY)],	    vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
     vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/a/click",			&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::AClick)]);
     vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/a/touch",			&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ATouch)]);
     vr::VRDriverInput()->CreateBooleanComponent(m_ulProps,	"/input/b/click",			&m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BClick)]);
@@ -231,7 +246,7 @@ void ContactGloveDevice::InputUpdateThread() {
 
     while (m_inputUpdateExecute) {
         m_doInput.exchange(true);
-        ContactGloveDevice::UpdateInputs(m_lastState);
+        UpdateInputs(m_lastState);
         m_doInput.exchange(false);
 
         std::this_thread::sleep_for(std::chrono::milliseconds( (uint64_t) INPUT_FREQUENCY ));
@@ -398,24 +413,24 @@ void ContactGloveDevice::UpdateSkeletalInput(const protocol::ContactGloveState_t
 
     GloveFingerCurls curls = {
         .thumb = {
-            .proximal   = Clamp(updateState.thumbRoot, -1.0f, 1.0f),
-            .distal     = Clamp(updateState.thumbTip,  -1.0f, 1.0f)
+            .proximal   = updateState.thumbRoot,
+            .distal     = updateState.thumbTip
         },
         .index = {
-            .proximal   = Clamp(updateState.indexRoot, -1.0f, 1.0f),
-            .distal     = Clamp(updateState.indexTip,  -1.0f, 1.0f)
+            .proximal   = updateState.indexRoot,
+            .distal     = updateState.indexTip
         },
         .middle = {
-            .proximal   = Clamp(updateState.middleRoot, -1.0f, 1.0f),
-            .distal     = Clamp(updateState.middleTip,  -1.0f, 1.0f)
+            .proximal   = updateState.middleRoot,
+            .distal     = updateState.middleTip
         },
         .ring = {
-            .proximal   = Clamp(updateState.ringRoot, -1.0f, 1.0f),
-            .distal     = Clamp(updateState.ringTip,  -1.0f, 1.0f)
+            .proximal   = updateState.ringRoot,
+            .distal     = updateState.ringTip
         },
         .pinky = {
-            .proximal   = Clamp(updateState.pinkyRoot, -1.0f, 1.0f),
-            .distal     = Clamp(updateState.pinkyTip,  -1.0f, 1.0f)
+            .proximal   = updateState.pinkyRoot,
+            .distal     = updateState.pinkyTip
         }
     };
     GloveFingerSplays splays = {};
@@ -467,56 +482,67 @@ void ContactGloveDevice::UpdateInputs(const protocol::ContactGloveState_t& updat
 
         if (updateState.hasMagnetra) {
             // Update inputs only if magnetra is connected
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickX)], updateState.joystickX, 0);
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickY)], -updateState.joystickY, 0); // Flipped in SteamVR for some reason
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickClick)], updateState.joystickClick, 0);
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickTouch)], updateState.joystickClick, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickX)],       updateState.joystickX,  0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickY)],       -updateState.joystickY, 0); // Flipped in SteamVR for some reason
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickClick)],  updateState.joystickClick, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickTouch)],  updateState.joystickClick, 0);
 
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::AClick)], updateState.buttonDown, 0);
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ATouch)], updateState.buttonDown || m_thumbActivation.isActive, 0); // Thumb is also going to activate A touch
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BClick)], updateState.buttonUp, 0);
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BTouch)], updateState.buttonUp, 0);
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemClick)], updateState.systemUp || updateState.systemDown, 0);
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemTouch)], updateState.systemUp || updateState.systemDown, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::AClick)],           updateState.buttonDown, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ATouch)],           updateState.buttonDown || m_thumbActivation.isActive, 0); // Thumb is also going to activate A touch
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BClick)],           updateState.buttonUp, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BTouch)],           updateState.buttonUp, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemClick)],      updateState.systemUp || updateState.systemDown, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemTouch)],      updateState.systemUp || updateState.systemDown, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemUpClick)],    updateState.systemUp, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemUpTouch)],    updateState.systemUp, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemDownClick)],  updateState.systemDown, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemDownTouch)],  updateState.systemDown, 0);
+
+            // Log inputs for vrchat
+            DriverLog("Joy %s :: (X: %f, Y: %f)", (m_isLeft ? "(L)" : "(R)"), updateState.joystickX, -updateState.joystickY);
         } else {
             // Default values
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickX)], 0, 0);
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickY)], 0, 0);
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickClick)], false, 0);
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickTouch)], false, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickX)],       0, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickY)],       0, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickClick)],  false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ThumbstickTouch)],  false, 0);
 
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::AClick)], false, 0);
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ATouch)], m_thumbActivation.isActive, 0); // Thumb is also going to activate A touch
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BClick)], false, 0);
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BTouch)], false, 0);
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemClick)], false, 0);
-            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemTouch)], false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::AClick)],           false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::ATouch)],           m_thumbActivation.isActive, 0); // Thumb is also going to activate A touch
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BClick)],           false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::BTouch)],           false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemClick)],      false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemTouch)],      false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemUpClick)],    false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemUpTouch)],    false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemDownClick)],  false, 0);
+            vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::SystemDownTouch)],  false, 0);
         }
 
-        vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TriggerClick)], m_triggerActivation.isActive, 0);
-        vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TriggerValue)], m_triggerActivation.value, 0);
+        vr::VRDriverInput()->UpdateBooleanComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TriggerClick)],         m_triggerActivation.isActive, 0);
+        vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TriggerValue)],          m_triggerActivation.value, 0);
         // Grip value => pull?
         // Grip force => force
-        vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::GripValue)], m_gripActivation.value, 0);
-        vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::GripForce)], m_gripActivation.value, 0);
+        vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::GripValue)],             m_gripActivation.value, 0);
+        vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::GripForce)],             m_gripActivation.value, 0);
         // vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TrackpadForce)], m_thumbActivation.value, 0);
         // vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TrackpadX)], 0, 0);
         // vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::TrackpadY)], m_thumbActivation.value * -1, 0);
 
         // Finger curl for knuckles emu to work
         if (updateState.useCurl) {
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerThumb)],   m_curlThumb, 0);
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerIndex)],   m_curlIndex, 0);
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerMiddle)],  m_curlMiddle, 0);
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerRing)],    m_curlRing, 0);
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerPinky)],   m_curlPinky, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerThumb)],       m_curlThumb, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerIndex)],       m_curlIndex, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerMiddle)],      m_curlMiddle, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerRing)],        m_curlRing, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerPinky)],       m_curlPinky, 0);
         }
         else {
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerThumb)],   updateState.thumbRoot, 0);
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerIndex)],   updateState.indexRoot, 0);
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerMiddle)],  updateState.middleRoot, 0);
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerRing)],    updateState.ringRoot, 0);
-            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerPinky)],   updateState.pinkyRoot, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerThumb)],       updateState.thumbRoot, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerIndex)],       updateState.indexRoot, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerMiddle)],      updateState.middleRoot, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerRing)],        updateState.ringRoot, 0);
+            vr::VRDriverInput()->UpdateScalarComponent(m_inputComponentHandles[static_cast<int>(KnuckleDeviceComponentIndex_t::FingerPinky)],       updateState.pinkyRoot, 0);
         }
 
         // Update the current input state

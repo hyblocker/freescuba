@@ -208,7 +208,7 @@ typedef uint64_t crc;
 #else
 void F_CRC_InitialiseTable(void);
 #endif
-crc F_CRC_CalculateCheckSum(uint8_t const AF_Datos[], size_t VF_nBytes);
+crc F_CRC_CalculateCheckSum(uint8_t const AF_Data[], size_t VF_nBytes);
 
 #define CRC_RESULT_OK 0
 

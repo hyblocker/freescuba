@@ -116,27 +116,27 @@ void ReadFingerJointCalibration(protocol::ContactGloveState_t::FingerJointCalibr
 	} catch (std::runtime_error) {}
 }
 
-void ReadFingersCalibration(protocol::ContactGloveState_t::FingerCalibrationData_t& state, picojson::object& jsonObj) {
+void ReadFingersCalibration(protocol::ContactGloveState_t::HandFingersCalibrationData_t& state, picojson::object& jsonObj) {
 
 	try {
 	picojson::object fingersRoot = jsonObj["fingers"].get<picojson::object>();
 
-#define READ_FINGER_CALIBRATION(jointRoot)														\
+#define READ_FINGER_CALIBRATION(jointRoot, structInner)											\
 	try {																						\
 		picojson::object jointRoot##Json = fingersRoot[#jointRoot].get<picojson::object>();		\
-		ReadFingerJointCalibration(state.jointRoot, jointRoot##Json);							\
+		ReadFingerJointCalibration(state.structInner, jointRoot##Json);							\
 	} catch (std::runtime_error) {}
 
-	READ_FINGER_CALIBRATION(thumbRoot);
-	READ_FINGER_CALIBRATION(thumbTip);
-	READ_FINGER_CALIBRATION(indexRoot);
-	READ_FINGER_CALIBRATION(indexTip);
-	READ_FINGER_CALIBRATION(middleRoot);
-	READ_FINGER_CALIBRATION(middleTip);
-	READ_FINGER_CALIBRATION(ringRoot);
-	READ_FINGER_CALIBRATION(ringTip);
-	READ_FINGER_CALIBRATION(pinkyRoot);
-	READ_FINGER_CALIBRATION(pinkyTip);
+	READ_FINGER_CALIBRATION(thumbRoot,	thumb.proximal);
+	READ_FINGER_CALIBRATION(thumbTip,	thumb.distal);
+	READ_FINGER_CALIBRATION(indexRoot,	index.proximal);
+	READ_FINGER_CALIBRATION(indexTip,	index.distal);
+	READ_FINGER_CALIBRATION(middleRoot,	middle.proximal);
+	READ_FINGER_CALIBRATION(middleTip,	middle.distal);
+	READ_FINGER_CALIBRATION(ringRoot,	ring.proximal);
+	READ_FINGER_CALIBRATION(ringTip,	ring.distal);
+	READ_FINGER_CALIBRATION(pinkyRoot,	pinky.proximal);
+	READ_FINGER_CALIBRATION(pinkyTip,	pinky.distal);
 
 #undef READ_FINGER_CALIBRATION
 	
@@ -265,25 +265,25 @@ void WriteFingerJointCalibration(protocol::ContactGloveState_t::FingerJointCalib
 	jsonObj["close"].set<double>( buf );
 }
 
-void WriteFingersCalibration(protocol::ContactGloveState_t::FingerCalibrationData_t& state, picojson::object& jsonObj) {
+void WriteFingersCalibration(protocol::ContactGloveState_t::HandFingersCalibrationData_t& state, picojson::object& jsonObj) {
 
 	picojson::object fingersRoot;
 
-#define WRITE_FINGER_CALIBRATION(jointRoot)							\
-	picojson::object jointRoot##Json;								\
-	WriteFingerJointCalibration(state.jointRoot, jointRoot##Json);	\
+#define WRITE_FINGER_CALIBRATION(jointRoot, structInner)				\
+	picojson::object jointRoot##Json;									\
+	WriteFingerJointCalibration(state.structInner, jointRoot##Json);	\
 	fingersRoot[#jointRoot].set<picojson::object>(jointRoot##Json);
 
-	WRITE_FINGER_CALIBRATION(thumbRoot);
-	WRITE_FINGER_CALIBRATION(thumbTip);
-	WRITE_FINGER_CALIBRATION(indexRoot);
-	WRITE_FINGER_CALIBRATION(indexTip);
-	WRITE_FINGER_CALIBRATION(middleRoot);
-	WRITE_FINGER_CALIBRATION(middleTip);
-	WRITE_FINGER_CALIBRATION(ringRoot);
-	WRITE_FINGER_CALIBRATION(ringTip);
-	WRITE_FINGER_CALIBRATION(pinkyRoot);
-	WRITE_FINGER_CALIBRATION(pinkyTip);
+	WRITE_FINGER_CALIBRATION(thumbRoot,		thumb.proximal);
+	WRITE_FINGER_CALIBRATION(thumbTip,		thumb.distal);
+	WRITE_FINGER_CALIBRATION(indexRoot,		index.proximal);
+	WRITE_FINGER_CALIBRATION(indexTip,		index.distal);
+	WRITE_FINGER_CALIBRATION(middleRoot,	middle.proximal);
+	WRITE_FINGER_CALIBRATION(middleTip,		middle.distal);
+	WRITE_FINGER_CALIBRATION(ringRoot,		ring.proximal);
+	WRITE_FINGER_CALIBRATION(ringTip,		ring.distal);
+	WRITE_FINGER_CALIBRATION(pinkyRoot,		pinky.proximal);
+	WRITE_FINGER_CALIBRATION(pinkyTip,		pinky.distal);
 
 #undef WRITE_FINGER_CALIBRATION
 

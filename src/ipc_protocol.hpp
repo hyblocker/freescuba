@@ -167,8 +167,15 @@ namespace protocol {
 			uint16_t bend;	// Bend pose (fingers bent away from the palm, backwards)
 			uint16_t close; // Close pose (fingers bent towards the palm)
 		};
-		// Joint collection forming an entire hand
+
 		struct FingerCalibrationData_t {
+			FingerJointCalibrationData_t proximal;
+			FingerJointCalibrationData_t distal;
+		};
+
+		// Joint collection forming an entire hand
+		struct HandFingersCalibrationData_t {
+			/*
 			FingerJointCalibrationData_t thumbRoot;
 			FingerJointCalibrationData_t thumbTip;
 			FingerJointCalibrationData_t indexRoot;
@@ -179,6 +186,12 @@ namespace protocol {
 			FingerJointCalibrationData_t ringTip;
 			FingerJointCalibrationData_t pinkyRoot;
 			FingerJointCalibrationData_t pinkyTip;
+			*/
+			FingerCalibrationData_t thumb;
+			FingerCalibrationData_t index;
+			FingerCalibrationData_t middle;
+			FingerCalibrationData_t ring;
+			FingerCalibrationData_t pinky;
 		};
 
 		struct CalibrationData_t {
@@ -199,7 +212,7 @@ namespace protocol {
 				vr::HmdQuaternion_t rot;
 			} poseOffset;
 
-			FingerCalibrationData_t fingers;
+			HandFingersCalibrationData_t fingers;
 
 			struct GestureThreshold_t {
 				float activate;

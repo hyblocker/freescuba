@@ -20,12 +20,18 @@ void SetupImgui() {
     // @TODO: ImGui style here
 
     ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
     ImGuiStyle& style = ImGui::GetStyle();
 
     // Main window should not have any border as it's rooted to the executable window
     style.WindowBorderSize  = 0.0f;
     style.WindowRounding    = 0.0f;
+
+    // Make buttons bigger so that they have a bigger hitbox in VR
+    style.FramePadding      = ImVec2(10, 6);
+    style.ItemSpacing       = ImVec2(10, 6);
 
     // Rounding
     style.ChildRounding     = 6.0f;
@@ -252,6 +258,11 @@ void DrawGlove(const std::string name, const std::string id, protocol::ContactGl
 
                 if (ImGui::Button("Calibrate fingers")) {
                     state.uiState.page = ScreenState_t::ScreenStateCalibrateFingers;
+                    state.uiState.calibrationState = CalibrationState_t::State_Entering;
+                }
+
+                if (ImGui::Button("Calibrate single finger")) {
+                    state.uiState.page = ScreenState_t::ScreenStateCalibrateFingersSingle;
                     state.uiState.calibrationState = CalibrationState_t::State_Entering;
                 }
 
@@ -549,20 +560,20 @@ void DrawCalibrateFingers(AppState& state) {
                 // Fingers are open, thumb is closed
                 ImGui::Text("Rest your fingers naturally, and close your thumb. Try aligning the fingers with the way you see them in VRChat for better accuracy.");
 
-                state.uiState.currentCalibration.fingers.thumbRoot.close	= desiredGlove->thumbRootRaw;
-                state.uiState.currentCalibration.fingers.thumbTip.close		= desiredGlove->thumbTipRaw;
+                state.uiState.currentCalibration.fingers.thumb.proximal.close	= desiredGlove->thumbRootRaw;
+                state.uiState.currentCalibration.fingers.thumb.distal.close		= desiredGlove->thumbTipRaw;
 
-                state.uiState.currentCalibration.fingers.indexRoot.rest		= desiredGlove->indexRootRaw;
-                state.uiState.currentCalibration.fingers.indexTip.rest		= desiredGlove->indexTipRaw;
+                state.uiState.currentCalibration.fingers.index.proximal.rest	= desiredGlove->indexRootRaw;
+                state.uiState.currentCalibration.fingers.index.distal.rest		= desiredGlove->indexTipRaw;
 
-                state.uiState.currentCalibration.fingers.middleRoot.rest	= desiredGlove->middleRootRaw;
-                state.uiState.currentCalibration.fingers.middleTip.rest		= desiredGlove->middleTipRaw;
+                state.uiState.currentCalibration.fingers.middle.proximal.rest	= desiredGlove->middleRootRaw;
+                state.uiState.currentCalibration.fingers.middle.distal.rest		= desiredGlove->middleTipRaw;
 
-                state.uiState.currentCalibration.fingers.ringRoot.rest		= desiredGlove->ringRootRaw;
-                state.uiState.currentCalibration.fingers.ringTip.rest		= desiredGlove->ringTipRaw;
+                state.uiState.currentCalibration.fingers.ring.proximal.rest		= desiredGlove->ringRootRaw;
+                state.uiState.currentCalibration.fingers.ring.distal.rest		= desiredGlove->ringTipRaw;
 
-                state.uiState.currentCalibration.fingers.pinkyRoot.rest		= desiredGlove->pinkyRootRaw;
-                state.uiState.currentCalibration.fingers.pinkyTip.rest		= desiredGlove->pinkyTipRaw;
+                state.uiState.currentCalibration.fingers.pinky.proximal.rest	= desiredGlove->pinkyRootRaw;
+                state.uiState.currentCalibration.fingers.pinky.distal.rest		= desiredGlove->pinkyTipRaw;
 
                 // Override the fingers because we're mid-calibration
                 desiredGlove->thumbRoot     = 1;
@@ -591,20 +602,20 @@ void DrawCalibrateFingers(AppState& state) {
                 // Fingers are closed, thumb is expanded
                 ImGui::Text("Close your fingers, and rest your thumb naturally. Try aligning the fingers with the way you see them in VRChat for better accuracy.");
 
-                state.uiState.currentCalibration.fingers.thumbRoot.rest		= desiredGlove->thumbRootRaw;
-                state.uiState.currentCalibration.fingers.thumbTip.rest		= desiredGlove->thumbTipRaw;
+                state.uiState.currentCalibration.fingers.thumb.proximal.rest	= desiredGlove->thumbRootRaw;
+                state.uiState.currentCalibration.fingers.thumb.distal.rest		= desiredGlove->thumbTipRaw;
 
-                state.uiState.currentCalibration.fingers.indexRoot.close	= desiredGlove->indexRootRaw;
-                state.uiState.currentCalibration.fingers.indexTip.close		= desiredGlove->indexTipRaw;
+                state.uiState.currentCalibration.fingers.index.proximal.close	= desiredGlove->indexRootRaw;
+                state.uiState.currentCalibration.fingers.index.distal.close		= desiredGlove->indexTipRaw;
 
-                state.uiState.currentCalibration.fingers.middleRoot.close	= desiredGlove->middleRootRaw;
-                state.uiState.currentCalibration.fingers.middleTip.close	= desiredGlove->middleTipRaw;
+                state.uiState.currentCalibration.fingers.middle.proximal.close	= desiredGlove->middleRootRaw;
+                state.uiState.currentCalibration.fingers.middle.distal.close	= desiredGlove->middleTipRaw;
 
-                state.uiState.currentCalibration.fingers.ringRoot.close		= desiredGlove->ringRootRaw;
-                state.uiState.currentCalibration.fingers.ringTip.close		= desiredGlove->ringTipRaw;
+                state.uiState.currentCalibration.fingers.ring.proximal.close    = desiredGlove->ringRootRaw;
+                state.uiState.currentCalibration.fingers.ring.distal.close		= desiredGlove->ringTipRaw;
 
-                state.uiState.currentCalibration.fingers.pinkyRoot.close	= desiredGlove->pinkyRootRaw;
-                state.uiState.currentCalibration.fingers.pinkyTip.close		= desiredGlove->pinkyTipRaw;
+                state.uiState.currentCalibration.fingers.pinky.proximal.close	= desiredGlove->pinkyRootRaw;
+                state.uiState.currentCalibration.fingers.pinky.distal.close		= desiredGlove->pinkyTipRaw;
 
                 // Override the fingers because we're mid-calibration
                 desiredGlove->thumbRoot     = 0;
@@ -660,6 +671,199 @@ void DrawCalibrateFingers(AppState& state) {
     }
     ImGui::EndGroupPanel();
 }
+
+void DrawCalibrateFingersSingle(AppState& state) {
+
+    ImGui::BeginGroupPanel("Single Finger Calibration");
+    {
+        protocol::ContactGloveState_t* desiredGlove = nullptr;
+        if (state.uiState.processingHandedness == Handedness_t::Left) {
+            ImGui::Text("Calibrating Left Glove Finger...");
+            desiredGlove = &state.gloveLeft;
+        }
+        else {
+            ImGui::Text("Calibrating Right Glove Finger...");
+            desiredGlove = &state.gloveRight;
+        }
+
+        // Handled here so that we don't get a blank frame
+        if (state.uiState.calibrationState == CalibrationState_t::State_Entering) {
+            // Copy the old calibration data
+            memcpy(&state.uiState.oldCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState_t::CalibrationData_t));
+
+            // Create a new calibration state, and 0 out the finger calibration
+            memcpy(&state.uiState.currentCalibration, &desiredGlove->calibration, sizeof(protocol::ContactGloveState_t::CalibrationData_t));
+            memset(&state.uiState.currentCalibration.fingers, 0, sizeof(protocol::ContactGloveState_t::FingerCalibrationData_t));
+
+            // Done. Move to DiscoverBounds
+            state.uiState.calibrationState = CalibrationState_t::Fingers_FocusOnFinger;
+        }
+
+        if (state.uiState.calibrationState == CalibrationState_t::Fingers_FocusOnFinger) {
+            ImGui::Text("Pick a finger to calibrate:");
+
+            if (ImGui::Button("Thumb")) {
+                state.uiState.targetFinger = CalibrationFinger_t::Finger_Thumb;
+                state.uiState.calibrationState = CalibrationState_t::Fingers_DiscoverNeutral;
+            }
+            if (ImGui::Button("Index")) {
+                state.uiState.targetFinger = CalibrationFinger_t::Finger_Index;
+                state.uiState.calibrationState = CalibrationState_t::Fingers_DiscoverNeutral;
+            }
+            if (ImGui::Button("Middle")) {
+                state.uiState.targetFinger = CalibrationFinger_t::Finger_Middle;
+                state.uiState.calibrationState = CalibrationState_t::Fingers_DiscoverNeutral;
+            }
+            if (ImGui::Button("Ring")) {
+                state.uiState.targetFinger = CalibrationFinger_t::Finger_Ring;
+                state.uiState.calibrationState = CalibrationState_t::Fingers_DiscoverNeutral;
+            }
+            if (ImGui::Button("Pinky")) {
+                state.uiState.targetFinger = CalibrationFinger_t::Finger_Pinky;
+                state.uiState.calibrationState = CalibrationState_t::Fingers_DiscoverNeutral;
+            }
+        }
+
+        // Cache if the buttons are pressed
+        const bool anyButtonPressedJoystick =
+            state.uiState.gloveButtons.releasedLeft.buttonUp || state.uiState.gloveButtons.releasedLeft.buttonDown || state.uiState.gloveButtons.releasedLeft.systemUp || state.uiState.gloveButtons.releasedLeft.systemDown || state.uiState.gloveButtons.releasedLeft.joystickClick ||
+            state.uiState.gloveButtons.releasedRight.buttonUp || state.uiState.gloveButtons.releasedRight.buttonDown || state.uiState.gloveButtons.releasedRight.systemUp || state.uiState.gloveButtons.releasedRight.systemDown || state.uiState.gloveButtons.releasedRight.joystickClick;
+
+        // Calibration code
+        switch (state.uiState.calibrationState) {
+        case CalibrationState_t::Fingers_DiscoverNeutral:
+        {
+            // Fingers are open, thumb is closed
+            ImGui::Text("Rest your fingers naturally, and close your thumb. Try aligning the fingers with the way you see them in VRChat for better accuracy.");
+
+            if (state.uiState.targetFinger == CalibrationFinger_t::Finger_Thumb) {
+                state.uiState.currentCalibration.fingers.thumb.proximal.close   = desiredGlove->thumbRootRaw;
+                state.uiState.currentCalibration.fingers.thumb.distal.close     = desiredGlove->thumbTipRaw;
+                desiredGlove->thumbRoot = 1;
+                desiredGlove->thumbTip = 1;
+            }
+
+            if (state.uiState.targetFinger == CalibrationFinger_t::Finger_Index) {
+                state.uiState.currentCalibration.fingers.index.proximal.rest    = desiredGlove->indexRootRaw;
+                state.uiState.currentCalibration.fingers.index.distal.rest      = desiredGlove->indexTipRaw;
+                desiredGlove->indexRoot = 0;
+                desiredGlove->indexTip = 0;
+            }
+
+            if (state.uiState.targetFinger == CalibrationFinger_t::Finger_Middle) {
+                state.uiState.currentCalibration.fingers.middle.proximal.rest   = desiredGlove->middleRootRaw;
+                state.uiState.currentCalibration.fingers.middle.distal.rest     = desiredGlove->middleTipRaw;
+                desiredGlove->middleRoot = 0;
+                desiredGlove->middleTip = 0;
+            }
+
+            if (state.uiState.targetFinger == CalibrationFinger_t::Finger_Ring) {
+                state.uiState.currentCalibration.fingers.ring.proximal.rest     = desiredGlove->ringRootRaw;
+                state.uiState.currentCalibration.fingers.ring.distal.rest       = desiredGlove->ringTipRaw;
+                desiredGlove->ringRoot = 0;
+                desiredGlove->ringTip = 0;
+            }
+
+            if (state.uiState.targetFinger == CalibrationFinger_t::Finger_Pinky) {
+                state.uiState.currentCalibration.fingers.pinky.proximal.rest    = desiredGlove->pinkyRootRaw;
+                state.uiState.currentCalibration.fingers.pinky.distal.rest      = desiredGlove->pinkyTipRaw;
+                desiredGlove->pinkyRoot = 0;
+                desiredGlove->pinkyTip = 0;
+            }
+
+            // Proceed on any input
+            ImGui::Text("Press any button to continue...");
+
+            if (ImGui::Button("Continue") || anyButtonPressedJoystick) {
+                // Move to the next state
+                state.uiState.calibrationState = CalibrationState_t::Fingers_DiscoverClosed;
+            }
+
+            break;
+        }
+        case CalibrationState_t::Fingers_DiscoverClosed:
+        {
+            // Fingers are closed, thumb is expanded
+            ImGui::Text("Close your fingers, and rest your thumb naturally. Try aligning the fingers with the way you see them in VRChat for better accuracy.");
+
+            if (state.uiState.targetFinger == CalibrationFinger_t::Finger_Thumb) {
+                state.uiState.currentCalibration.fingers.thumb.proximal.rest    = desiredGlove->thumbRootRaw;
+                state.uiState.currentCalibration.fingers.thumb.distal.rest      = desiredGlove->thumbTipRaw;
+                desiredGlove->thumbRoot = 0;
+                desiredGlove->thumbTip = 0;
+            }
+
+            if (state.uiState.targetFinger == CalibrationFinger_t::Finger_Index) {
+                state.uiState.currentCalibration.fingers.index.proximal.close   = desiredGlove->indexRootRaw;
+                state.uiState.currentCalibration.fingers.index.distal.close     = desiredGlove->indexTipRaw;
+                desiredGlove->indexRoot = 1;
+                desiredGlove->indexTip = 1;
+            }
+
+            if (state.uiState.targetFinger == CalibrationFinger_t::Finger_Middle) {
+                state.uiState.currentCalibration.fingers.middle.proximal.close  = desiredGlove->middleRootRaw;
+                state.uiState.currentCalibration.fingers.middle.distal.close    = desiredGlove->middleTipRaw;
+                desiredGlove->middleRoot = 1;
+                desiredGlove->middleTip = 1;
+            }
+
+            if (state.uiState.targetFinger == CalibrationFinger_t::Finger_Ring) {
+                state.uiState.currentCalibration.fingers.ring.proximal.close    = desiredGlove->ringRootRaw;
+                state.uiState.currentCalibration.fingers.ring.distal.close      = desiredGlove->ringTipRaw;
+                desiredGlove->ringRoot = 1;
+                desiredGlove->ringTip = 1;
+            }
+
+            if (state.uiState.targetFinger == CalibrationFinger_t::Finger_Pinky) {
+                state.uiState.currentCalibration.fingers.pinky.proximal.close   = desiredGlove->pinkyRootRaw;
+                state.uiState.currentCalibration.fingers.pinky.distal.close     = desiredGlove->pinkyTipRaw;
+                desiredGlove->pinkyRoot = 1;
+                desiredGlove->pinkyTip = 1;
+            }
+
+            // Proceed on any input
+            ImGui::Text("Press any button to continue...");
+
+            if (ImGui::Button("Continue") || anyButtonPressedJoystick) {
+                // Move to the next state
+                // state.uiState.calibrationState = CalibrationState::Fingers_DiscoverClosed;
+
+                // Move to the next state
+                state.uiState.calibrationState = CalibrationState_t::State_Entering;
+                state.uiState.page = ScreenState_t::ScreenStateViewData;
+
+                // Copy the new calibration back
+                memcpy(&desiredGlove->calibration, &state.uiState.currentCalibration, sizeof(protocol::ContactGloveState_t::CalibrationData_t));
+            }
+
+            break;
+        }
+        case CalibrationState_t::Fingers_DiscoverBackwardsBend:
+        {
+            // Maybe unecessary, with linear interpolation this should be a given
+
+            break;
+        }
+        default:
+        {
+            ImGui::Text((std::string("Encountered broken state! (") + std::to_string((int)state.uiState.calibrationState) + ")").c_str());
+            break;
+        }
+        }
+
+        if (ImGui::Button("Cancel")) {
+            // Move to the data page
+            state.uiState.calibrationState = CalibrationState_t::State_Entering;
+            state.uiState.page = ScreenState_t::ScreenStateViewData;
+
+            // Set the old calibration
+            // Should not be necessary
+
+        }
+    }
+    ImGui::EndGroupPanel();
+}
+
 
 void DrawCalibrateOffsets(AppState& state) {
 
@@ -828,6 +1032,10 @@ void DrawUi(const bool isOverlay, AppState& state) {
         }
         case ScreenState_t::ScreenStateCalibrateFingers: {
             DrawCalibrateFingers(state);
+            break;
+        }
+        case ScreenState_t::ScreenStateCalibrateFingersSingle: {
+            DrawCalibrateFingersSingle(state);
             break;
         }
         case ScreenState_t::ScreenStateCalibrateOffset: {

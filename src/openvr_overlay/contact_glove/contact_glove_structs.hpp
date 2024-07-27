@@ -135,3 +135,19 @@ public:
 		DevicesStatus_t			status;
 	} packet;
 };
+
+struct GloveHapticCommand_t {
+
+};
+
+enum class CommandType_t {
+	Haptic
+};
+
+// Commands are packets which are sent to the glove itself to instruct it to do something
+struct ContactGloveCommand_t {
+	CommandType_t type;
+	union ContactGloveCommand {
+		GloveHapticCommand_t haptic;
+	} command;
+};

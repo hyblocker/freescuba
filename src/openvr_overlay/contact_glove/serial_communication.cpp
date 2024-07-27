@@ -301,7 +301,6 @@ bool SerialCommunicationManager::ReceiveNextPacket(std::string& buff) {
         }
 
         if (dwRead == 0) {
-            LogWarning("No packet received within timeout\n");
             break;
         }
 
@@ -587,7 +586,7 @@ bool SerialCommunicationManager::DecodePacket(const uint8_t* pData, const size_t
 
         // printf("glove[L]:: %d%%  ; glove[R]:: %d%%\n", outPacket->packet.status.gloveLeftBattery, outPacket->packet.status.gloveRightBattery);
 
-        // PrintBuffer("dongle4", pData, length);
+        // PrintBuffer("device_status", pData, length);
 
         decoded = true;
     }
@@ -619,8 +618,8 @@ bool SerialCommunicationManager::DecodePacket(const uint8_t* pData, const size_t
         outPacket->packet.gloveFingers.fingerMiddleRoot = ((uint16_t*)(pData + 1))[4];
         outPacket->packet.gloveFingers.fingerRingTip    = ((uint16_t*)(pData + 1))[3];
         outPacket->packet.gloveFingers.fingerRingRoot   = ((uint16_t*)(pData + 1))[2];
-        outPacket->packet.gloveFingers.fingerPinkyTip   = ((uint16_t*)(pData + 1))[1];
-        outPacket->packet.gloveFingers.fingerPinkyRoot  = ((uint16_t*)(pData + 1))[0];
+        outPacket->packet.gloveFingers.fingerPinkyTip   = ((uint16_t*)(pData + 1))[0];
+        outPacket->packet.gloveFingers.fingerPinkyRoot  = ((uint16_t*)(pData + 1))[1];
 
         // printf(
         //     "fingers[L]:: (%d, %d) (%d, %d) (%d, %d) (%d, %d) (%d, %d)\n",
@@ -666,7 +665,7 @@ bool SerialCommunicationManager::DecodePacket(const uint8_t* pData, const size_t
         //     outPacket->packet.gloveImu.imu5,
         //     outPacket->packet.gloveImu.imu6);
 
-        // PrintBuffer("glove_left_small", pData, length);
+        // PrintBuffer("glove_left_imu", pData, length);
         decoded = true;
 
     }
@@ -686,8 +685,8 @@ bool SerialCommunicationManager::DecodePacket(const uint8_t* pData, const size_t
         outPacket->packet.gloveFingers.fingerMiddleRoot = ((uint16_t*)(pData + 1))[4];
         outPacket->packet.gloveFingers.fingerRingTip    = ((uint16_t*)(pData + 1))[3];
         outPacket->packet.gloveFingers.fingerRingRoot   = ((uint16_t*)(pData + 1))[2];
-        outPacket->packet.gloveFingers.fingerPinkyTip   = ((uint16_t*)(pData + 1))[1];
-        outPacket->packet.gloveFingers.fingerPinkyRoot  = ((uint16_t*)(pData + 1))[0];
+        outPacket->packet.gloveFingers.fingerPinkyTip   = ((uint16_t*)(pData + 1))[0];
+        outPacket->packet.gloveFingers.fingerPinkyRoot  = ((uint16_t*)(pData + 1))[1];
 
         // printf(
         //     "fingers[R]:: (%d, %d) (%d, %d) (%d, %d) (%d, %d) (%d, %d)\n",
@@ -733,7 +732,7 @@ bool SerialCommunicationManager::DecodePacket(const uint8_t* pData, const size_t
         //     outPacket->packet.gloveImu.imu5,
         //     outPacket->packet.gloveImu.imu6);
 
-        // PrintBuffer("glove_right_small", pData, length);
+        // PrintBuffer("glove_right_imu", pData, length);
         decoded = true;
 
     }
@@ -742,7 +741,7 @@ bool SerialCommunicationManager::DecodePacket(const uint8_t* pData, const size_t
 
     default:
         // @FIXME: Use proper logging library
-        printf("[WARN] Got unknown packet with command code 0x%02hX!!\n", pData[1]);
+        printf("[WARN] Got unknown packet with command code 0x%02hX!!\n", pData[0]);
         PrintBuffer("unknown_packet", pData, length);
         break;
     }
@@ -753,13 +752,13 @@ bool SerialCommunicationManager::DecodePacket(const uint8_t* pData, const size_t
 /*
 WRITE FILE:
 ```
-02 01 01 02 f0 01 03 f0 02 00
-05 18 01 01 e1 00
-05 18 02 01 de 00
-05 18 01 0b d7 00
-05 18 02 0b e8 00
-05 16 01 04 03 01 03 ff 70 00
-05 16 02 04 03 01 03 ff 0b 00
-03 0f 32 02 64 03 ff 9f 00
+02 01 01 02 f0 01 03 f0 02 00           | 01 00 00 F0 00 00 F0 02
+05 18 01 01 e1 00                       | 18 01 01 E1
+05 18 02 01 de 00                       | 18 02 01 DE
+05 18 01 0b d7 00                       | 18 01 0B D7
+05 18 02 0b e8 00                       | 18 02 0B E8
+05 16 01 04 03 01 03 ff 70 00           | 16 01 04 03 00 00 FF 70
+05 16 02 04 03 01 03 ff 0b 00           | 16 02 04 03 00 00 FF 0B
+03 0f 32 02 64 03 ff 9f 00              | 0F 32 00 64 00 FF 9F
 ```
 */

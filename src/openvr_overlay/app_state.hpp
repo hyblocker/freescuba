@@ -12,6 +12,7 @@ enum class ScreenState_t {
     ScreenStateViewData,
     ScreenStateCalibrateJoystick,
     ScreenStateCalibrateFingers,
+    ScreenStateCalibrateFingersSingle,
     ScreenStateCalibrateOffset,
 };
 
@@ -31,11 +32,20 @@ enum class CalibrationState_t {
     Fingers_DiscoverNeutral = 1,
     Fingers_DiscoverClosed,
     Fingers_DiscoverBackwardsBend,
+    Fingers_FocusOnFinger,
 
     // Stages for pose offset calibration
     PoseOffset_FindInitialPose = 1,
     PoseOffset_Moving,
     PoseOffset_Set,
+};
+
+enum class CalibrationFinger_t {
+    Finger_Thumb,
+    Finger_Index,
+    Finger_Middle,
+    Finger_Ring,
+    Finger_Pinky,
 };
 
 struct AppState {
@@ -63,6 +73,8 @@ public:
         protocol::ContactGloveState_t::CalibrationData_t oldCalibration;
         // Buffer for the temporary, current calibration state. This is not forwarded to the SteamVR driver until the calibration is complete.
         protocol::ContactGloveState_t::CalibrationData_t currentCalibration;
+
+        CalibrationFinger_t targetFinger;
 
         MostCommonElementRingBuffer leftGloveBatteryBuffer;
         MostCommonElementRingBuffer rightGloveBatteryBuffer;

@@ -16,6 +16,10 @@ const short NUM_BONES = static_cast<short>(HandSkeletonBone::kHandSkeletonBone_C
 enum class KnuckleDeviceComponentIndex_t : uint8_t {
     SystemClick = 0,
     SystemTouch,
+    SystemUpClick,
+    SystemUpTouch,
+    SystemDownClick,
+    SystemDownTouch,
     TriggerClick,
     TriggerValue,
     TrackpadX,
